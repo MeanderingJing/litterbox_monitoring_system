@@ -1,0 +1,19 @@
+# Write a docker compose file to run a postgres database with a specific version and a volume for data persistence.
+version: '3.8'
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: example_user
+      POSTGRES_PASSWORD: example_password
+      POSTGRES_DB: example_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+
+volumes:
+  pgdata:
+    driver: local
+    name: pgdata_volume
