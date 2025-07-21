@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 from config.logging import get_logger
 
 logger = get_logger(__name__)
-# LITTERBOX_API_URL = "https://fake-litterbox-data-api-b24fad16e70f.herokuapp.com/"
-LITTERBOX_API_URL = "http://localhost:5000/"
+LITTERBOX_API_URL = "https://fake-litterbox-usage-api-1bf46a2bc363.herokuapp.com/"
+# LITTERBOX_API_URL = "http://localhost:5000/"
 LITTERBOX_USAGE_DATA_ENDPOINT = "litterbox_usage_data"
 
 
