@@ -24,9 +24,9 @@ def get_litterbox_usage_data(
         end_date (str): Optional end date filter (ISO format).
     """
     # Ensure the endpoint is properly formatted
-    base_url = LITTERBOX_API_URL.rstrip('/')
-    if not endpoint.startswith('/'):
-        endpoint = '/' + endpoint
+    base_url = LITTERBOX_API_URL.rstrip("/")
+    if not endpoint.startswith("/"):
+        endpoint = "/" + endpoint
     url = f"{base_url}{endpoint}"
     logger.info(f"Fetching data from Litterbox API at {url}")
 
@@ -35,7 +35,7 @@ def get_litterbox_usage_data(
         params["start_date"] = start_date
     if end_date:
         params["end_date"] = end_date
-    
+
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()
@@ -43,6 +43,3 @@ def get_litterbox_usage_data(
     except requests.RequestException as e:
         logger.error(f"Error fetching data from Litterbox API: {e}")
         raise
-
-
-
