@@ -1,3 +1,7 @@
+# Build 
+`poetry install`
+or
+`pip install -e .` `pip install -r requirements.txt`
 # Collect data from external API and store it in the database
 `python3 src/services/data_synchronizer.py`
 # Analyze data
