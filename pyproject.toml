@@ -12,7 +12,19 @@ packages = [{ include = "data_collector", from = "src" },
 
 [tool.poetry.dependencies]
 python = "^3.12"
+psycopg2 = "^2.9.10"
+requests = "^2.32.4"
+sqlalchemy = "^2.0.41"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+pytest = "^8.4.1"
+mypy-extensions = "^1.1.0"
+pluggy = "^1.6.0"
+iniconfig = "^2.1.0"
+pathspec = "^0.12.1"
+pygments = "^2.19.2"
 
 [build-system]
 requires = ["poetry-core"]
