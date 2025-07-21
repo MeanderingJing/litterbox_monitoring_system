@@ -6,11 +6,12 @@ from config.logging import get_logger
 
 logger = get_logger(__name__)
 # LITTERBOX_API_URL = "https://fake-litterbox-data-api-b24fad16e70f.herokuapp.com/"
-LITTERBOX_API_URL = "http://localhost:5000/litterbox_usage_data"
+LITTERBOX_API_URL = "http://localhost:5000/"
+LITTERBOX_USAGE_DATA_ENDPOINT = "litterbox_usage_data"
 
 
 def get_litterbox_usage_data(
-    url: str = LITTERBOX_API_URL,
+    endpoint: str = LITTERBOX_USAGE_DATA_ENDPOINT,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
@@ -22,6 +23,12 @@ def get_litterbox_usage_data(
         start_data (str): Optional start date filter (ISO format).
         end_date (str): Optional end date filter (ISO format).
     """
+    # Ensure the endpoint is properly formatted
+    base_url = LITTERBOX_API_URL.rstrip('/')
+    if not endpoint.startswith('/'):
+        endpoint = '/' + endpoint
+    url = f"{base_url}{endpoint}"
+    logger.info(f"Fetching data from Litterbox API at {url}")
 
     params = {}
     if start_date:

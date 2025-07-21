@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "litterbox-data-collector"
+version = "0.1.0"
+description = "A Python package retrieving litterbox usage data and storing in a database."
+authors = ["Jing Li"]
+readme = "README.md"
+packages = [{ include = "data_collector", from = "src" }, 
+            {include = "config", from = "src"},
+            {include = "database", from = "src"},
+            {include = "models", from = "src"},
+            {include = "services", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
