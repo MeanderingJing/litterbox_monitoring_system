@@ -31,4 +31,5 @@ def setup_logging():
 
 def get_logger(name: str):
     """Get a logger for a specific module."""
+    setup_logging()  # Ensure logging is set up
     return logging.getLogger(name)
