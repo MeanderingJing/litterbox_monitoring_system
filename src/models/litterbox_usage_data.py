@@ -12,7 +12,9 @@ class Base(DeclarativeBase):
 class LitterboxUsageData(Base):
     __tablename__ = "litterbox_usage_data"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True, default=lambda: uuid.uuid4()
+    )
     cat_id: Mapped[int] = mapped_column(nullable=False)
     litterbox_id: Mapped[int] = mapped_column(nullable=False)
     enter_time: Mapped[datetime] = mapped_column(nullable=False)
