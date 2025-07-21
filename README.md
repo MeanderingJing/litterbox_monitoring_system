@@ -1,3 +1,6 @@
+# Set up postgresql database
+sudo docker compose up
+
 # Build 
 `poetry install`
 or
