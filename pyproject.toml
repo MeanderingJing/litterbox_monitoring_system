@@ -25,6 +25,12 @@ pluggy = "^1.6.0"
 iniconfig = "^2.1.0"
 pathspec = "^0.12.1"
 pygments = "^2.19.2"
+pytest-asyncio = "^1.1.0"
+flake8 = "^7.3.0"
+mypy = "^1.17.0"
+safety = "^3.6.0"
+pytest-cov = "^6.2.1"
+isort = "^6.0.1"
 
 [build-system]
 requires = ["poetry-core"]
