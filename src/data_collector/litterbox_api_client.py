@@ -1,7 +1,9 @@
 """API client for interacting with the Litterbox API."""
 
-import requests
 from typing import Any, Dict, List, Optional
+
+import requests
+
 from config.logging import get_logger
 
 logger = get_logger(__name__)
