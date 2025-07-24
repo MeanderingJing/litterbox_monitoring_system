@@ -2,9 +2,10 @@
 
 import pytest
 import requests
+
 from data_collector.litterbox_api_client import (
-    get_litterbox_usage_data,
     LITTERBOX_API_URL,
+    get_litterbox_usage_data,
 )
 
 

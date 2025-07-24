@@ -1,9 +1,9 @@
-import pytest
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
 
 from models.litterbox_usage_data import Base, LitterboxUsageData
 

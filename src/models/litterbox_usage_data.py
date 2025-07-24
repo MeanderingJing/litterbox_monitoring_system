@@ -1,8 +1,8 @@
-from typing import Optional, List
-from datetime import datetime
 import uuid
-from sqlalchemy import ForeignKey, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+from datetime import datetime
+
+from sqlalchemy import Index
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):

@@ -10,32 +10,26 @@ class DatabaseGateway(ABC):
     @abstractmethod
     def connect(self) -> None:
         """Establish a connection to the database."""
-        pass
 
     @abstractmethod
     def disconnect(self) -> None:
         """Close the connection to the database."""
-        pass
 
     @abstractmethod
     def create_tables(self) -> None:
         """Create necessary tables in the database."""
-        pass
 
     @abstractmethod
     def insert_litterbox_usage_data(self) -> None:
         """Insert litterbox usage data into the database."""
-        pass
 
     @abstractmethod
     def get_litterbox_usage_data(self) -> List[Dict[str, Any]]:
         """Retrieve litterbox usage data from the database."""
-        pass
 
     @abstractmethod
     def get_latest_litterbox_usage_timestamp(self) -> Optional[str]:
         """Get the latest usage timestamp from the database."""
-        pass
 
     # @abstractmethod
     # def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:

@@ -3,10 +3,11 @@ Main data collector and synchronizer service.
 It fetches data from the Litterbox API and synchronizes it with the database.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
+from config.logging import get_logger
 from data_collector.litterbox_api_client import get_litterbox_usage_data
 from database.postgresql_gateway import PostgreSQLGateway
-from config.logging import get_logger
 
 logger = get_logger(__name__)
 DATABASE_URL = "postgresql://example_user:example_password@localhost:5435/example_db"

@@ -1,12 +1,14 @@
 """SQLAlchemy PostgreSQL implmentation of database gateway."""
 
-from datetime import datetime
 from typing import Any, Dict, List, Optional
-from sqlalchemy import create_engine, func, text
-from sqlalchemy.orm import sessionmaker, Session
-from .gateway import DatabaseGateway
-from models.litterbox_usage_data import Base, LitterboxUsageData
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
+
 from config.logging import get_logger
+from models.litterbox_usage_data import Base, LitterboxUsageData
+
+from .gateway import DatabaseGateway
 
 
 class PostgreSQLGateway(DatabaseGateway):
