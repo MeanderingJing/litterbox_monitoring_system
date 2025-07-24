@@ -3,8 +3,10 @@
 import pytest
 import requests
 
-from data_collector.litterbox_api_client import (LITTERBOX_API_URL,
-                                                 get_litterbox_usage_data)
+from data_collector.litterbox_api_client import (
+    LITTERBOX_API_URL,
+    get_litterbox_usage_data,
+)
 
 
 # Pytest fixtures for common test data

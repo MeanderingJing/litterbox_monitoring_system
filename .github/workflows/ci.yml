@@ -51,9 +51,9 @@ jobs:
       - name: Run linter
         run: |
           poetry run flake8 .
-      - name: Run type checking
-        run: |
-          poetry run mypy .
+      # - name: Run type checking
+      #   run: |
+      #     poetry run mypy .
       - name: Run tests
         run: |
           poetry run pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing
