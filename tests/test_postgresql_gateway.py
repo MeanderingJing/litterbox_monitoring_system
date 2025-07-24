@@ -1,5 +1,6 @@
 """Tests for PostgreSQL database gateway using pytest."""
 
+import os
 import uuid
 import pytest
 from datetime import datetime
@@ -13,7 +14,8 @@ from models.litterbox_usage_data import LitterboxUsageData
 @pytest.fixture
 def db_url():
     """Test database URL."""
-    return "postgresql://example_user:example_password@localhost:5435/example_db"
+    db_url = os.getenv("DATABASE_URL", "postgresql://test_user:test_password@localhost:5432/test_litterbox_db")
+    return db_url
 
 
 @pytest.fixture
@@ -88,8 +90,8 @@ class TestPostgreSQLGatewayInit:
         assert gateway.logger is not None
 
 
-class TestPostgreSQLGatewayConnect:
-    """Test database connection functionality."""
+# class TestPostgreSQLGatewayConnect:
+#     """Test database connection functionality."""
     
     # @patch('database.postgresql_gateway.create_engine')
     # @patch('database.postgresql_gateway.Session')
