@@ -1,10 +1,9 @@
 """SQLAlchemy PostgreSQL implmentation of database gateway."""
 
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import create_engine, func, text
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
 
 from config.logging import get_logger
 from models.litterbox_usage_data import Base, LitterboxUsageData

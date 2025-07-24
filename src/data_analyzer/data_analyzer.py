@@ -3,10 +3,9 @@ This module takes care of data analysis tasks for the Litterbox data collector.
 It includes functions to analyze litterbox usage data.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from config.logging import get_logger
-from database.gateway import DatabaseGateway
 from database.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
