@@ -1,0 +1,98 @@
+name: CI Pipeline
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_litterbox_db
+        options: >-
+          --health-cmd "pg_isready -U user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: '1.8.3'
+      - name: Install dependencies
+        run: |
+          poetry config virtualenvs.create false
+          poetry install --no-interaction --no-root
+      - name: Wait for services to be ready
+        run: |
+          # Wait for PostgreSQL to be ready
+          until pg_isready -h localhost -p 5432 -U user; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 1
+          done
+
+      - name: Run linter
+        run: |
+          poetry run flake8 .
+      - name: Run type checking
+        run: |
+          poetry run mypy .
+      - name: Run tests
+        run: |
+          poetry run pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing
+        env:
+          DATABASE_URL: postgresql://test_user:test)password@localhost:5432/test_litterbox_db
+          PYTHONPATH: src
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
+          flags: unittests
+          name: codecov-coverage
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Trivy vunlerability scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-scan-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-scan-results.sarif'
+          category: 'security'
+
+      - name: Run security checks
+        run: |
+          pip install safety
+          safety check --json --output safety-results.json || true
+
+
+        
