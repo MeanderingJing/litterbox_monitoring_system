@@ -1,370 +1,519 @@
-import uuid
-from datetime import datetime
-
 import pytest
+import uuid
+from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
-from models.litterbox_usage_data import Base, LitterboxUsageData
+# Import your models (adjust the import path as needed)
+from models.models import Base, UserInfo, CatInfo, LitterboxInfo, LitterboxEdgeDeviceInfo, LitterboxUsageData
 
 
-@pytest.fixture
-def engine():
+@pytest.fixture(scope="function")
+def db_session():
     """Create an in-memory SQLite database for testing."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
-    return engine
-
-
-@pytest.fixture
-def session(engine):
-    """Create a database session for testing."""
     Session = sessionmaker(bind=engine)
     session = Session()
+    
     yield session
+    
     session.close()
 
 
 @pytest.fixture
-def sample_data():
-    """Sample data for testing."""
-    return {
-        "id": uuid.uuid4(),
-        "cat_id": 1,
-        "litterbox_id": 2,
-        "enter_time": datetime(2024, 1, 15, 10, 30, 0),
-        "exit_time": datetime(2024, 1, 15, 10, 35, 0),
-        "weight_enter": 4.5,
-        "weight_exit": 4.3,
-        "timestamp": datetime(2024, 1, 15, 10, 35, 30),
-    }
+def sample_user():
+    """Create a sample user for testing."""
+    return UserInfo(
+        username="testuser",
+        email="test@example.com",
+        password_hash="hashed_password_123"
+    )
 
 
 @pytest.fixture
-def sample_dict_data():
-    """Sample dictionary data for testing from_dict method."""
-    return {
-        "cat_id": 3,
-        "litterbox_id": 1,
-        "enter_time": datetime(2024, 2, 20, 14, 15, 0),
-        "exit_time": datetime(2024, 2, 20, 14, 18, 0),
-        "weight_enter": 3.8,
-        "weight_exit": 3.6,
-        "timestamp": datetime(2024, 2, 20, 14, 18, 30),
-    }
+def sample_cat(sample_user):
+    """Create a sample cat for testing."""
+    return CatInfo(
+        owner_id=sample_user.id,
+        name="Fluffy",
+        breed="Persian",
+        age=3
+    )
 
 
-class TestLitterboxUsageDataModel:
-    """Test cases for LitterboxUsageData model."""
+@pytest.fixture
+def sample_litterbox(sample_cat):
+    """Create a sample litterbox for testing."""
+    return LitterboxInfo(
+        cat_id=sample_cat.id,
+        name="Main Litterbox"
+    )
 
-    def test_create_instance_with_all_fields(self, sample_data: dict):
-        """Test creating an instance with all required fields."""
-        usage = LitterboxUsageData(**sample_data)
 
-        assert usage.id == sample_data["id"]
-        assert usage.cat_id == sample_data["cat_id"]
-        assert usage.litterbox_id == sample_data["litterbox_id"]
-        assert usage.enter_time == sample_data["enter_time"]
-        assert usage.exit_time == sample_data["exit_time"]
-        assert usage.weight_enter == sample_data["weight_enter"]
-        assert usage.weight_exit == sample_data["weight_exit"]
-        assert usage.timestamp == sample_data["timestamp"]
+@pytest.fixture
+def sample_edge_device(sample_litterbox):
+    """Create a sample edge device for testing."""
+    return LitterboxEdgeDeviceInfo(
+        id=uuid.uuid4(),  # Must be provided by user
+        litterbox_id=sample_litterbox.id,
+        device_name="Smart Litterbox Sensor",
+        device_type="weight_sensor"
+    )
 
-    def test_repr_method(self, sample_data):
-        """Test the __repr__ method."""
-        usage = LitterboxUsageData(**sample_data)
-        repr_str = repr(usage)
 
-        assert f"id={sample_data['id']}" in repr_str
-        assert f"cat_id={sample_data['cat_id']}" in repr_str
-        assert f"litterbox_id={sample_data['litterbox_id']}" in repr_str
+@pytest.fixture
+def sample_usage_data(sample_edge_device):
+    """Create sample usage data for testing."""
+    enter_time = datetime.now(timezone.utc)
+    exit_time = datetime.now(timezone.utc)
+    return LitterboxUsageData(
+        litterbox_edge_device_id=sample_edge_device.id,
+        enter_time=enter_time,
+        exit_time=exit_time,
+        weight_enter=5.2,
+        weight_exit=5.0
+    )
+
+
+class TestUserInfo:
+    """Tests for UserInfo model."""
+    
+    def test_user_creation(self, db_session, sample_user):
+        """Test creating a user."""
+        db_session.add(sample_user)
+        db_session.commit()
+        
+        assert sample_user.id is not None
+        assert isinstance(sample_user.id, uuid.UUID)
+        assert sample_user.username == "testuser"
+        assert sample_user.email == "test@example.com"
+        assert sample_user.created_at is not None
+        assert sample_user.updated_at is None
+    
+    def test_user_unique_constraints(self, db_session):
+        """Test that username and email must be unique."""
+        user1 = UserInfo(username="user1", email="user1@example.com", password_hash="hash1")
+        user2 = UserInfo(username="user1", email="user2@example.com", password_hash="hash2")
+        
+        db_session.add(user1)
+        db_session.commit()
+        
+        db_session.add(user2)
+        with pytest.raises(IntegrityError):
+            db_session.commit()
+    
+    def test_user_repr(self, sample_user):
+        """Test user string representation."""
+        repr_str = repr(sample_user)
+        assert "UserInfo" in repr_str
+        assert sample_user.username in repr_str
+        assert sample_user.email in repr_str
+    
+    def test_user_to_dict(self, sample_user):
+        """Test converting user to dictionary."""
+        user_dict = sample_user.to_dict()
+        
+        assert user_dict["username"] == "testuser"
+        assert user_dict["email"] == "test@example.com"
+        assert user_dict["password_hash"] == "hashed_password_123"
+        assert isinstance(user_dict["id"], str)
+        assert "cats" not in user_dict
+    
+    def test_user_to_dict_with_relationships(self, db_session, sample_user, sample_cat):
+        """Test converting user to dictionary with relationships."""
+        sample_cat.owner = sample_user
+        db_session.add(sample_user)
+        db_session.add(sample_cat)
+        db_session.commit()
+        
+        user_dict = sample_user.to_dict(include_relationships=True)
+        
+        assert "cats" in user_dict
+        assert len(user_dict["cats"]) == 1
+        assert user_dict["cats"][0]["name"] == "Fluffy"
+    
+    def test_user_from_dict(self):
+        """Test creating user from dictionary."""
+        user_id = uuid.uuid4()
+        created_at = datetime.now(timezone.utc)
+        
+        data = {
+            "id": str(user_id),
+            "username": "dictuser",
+            "email": "dict@example.com",
+            "password_hash": "dict_hash",
+            "created_at": created_at.isoformat(),
+            "cats": []  # This should be filtered out
+        }
+        
+        user = UserInfo.from_dict(data)
+        
+        assert user.id == user_id
+        assert user.username == "dictuser"
+        assert user.email == "dict@example.com"
+        assert user.created_at == created_at
+
+
+class TestCatInfo:
+    """Tests for CatInfo model."""
+    
+    def test_cat_creation(self, db_session, sample_user, sample_cat):
+        """Test creating a cat."""
+        db_session.add(sample_user)
+        db_session.commit()
+        # Make sure sample_cat.owner_id is set properly
+        sample_cat.owner_id = sample_user.id
+        db_session.add(sample_cat)
+        db_session.commit()
+        
+        assert sample_cat.id is not None
+        assert isinstance(sample_cat.id, uuid.UUID)
+        assert sample_cat.name == "Fluffy"
+        assert sample_cat.breed == "Persian"
+        assert sample_cat.age == 3
+        assert sample_cat.owner_id == sample_user.id
+    
+    def test_cat_owner_relationship(self, db_session, sample_user, sample_cat):
+        """Test cat-owner relationship."""
+        sample_cat.owner = sample_user
+        db_session.add(sample_user)
+        db_session.add(sample_cat)
+        db_session.commit()
+        
+        assert sample_cat.owner == sample_user
+        assert sample_cat in sample_user.cats
+    
+    def test_cat_repr(self, sample_cat):
+        """Test cat string representation."""
+        repr_str = repr(sample_cat)
+        assert "CatInfo" in repr_str
+        assert sample_cat.name in repr_str
+        assert sample_cat.breed in repr_str
+    
+    def test_cat_to_dict(self, sample_cat):
+        """Test converting cat to dictionary."""
+        cat_dict = sample_cat.to_dict()
+        
+        assert cat_dict["name"] == "Fluffy"
+        assert cat_dict["breed"] == "Persian"
+        assert cat_dict["age"] == 3
+        assert isinstance(cat_dict["owner_id"], str)
+    
+    def test_cat_from_dict(self):
+        """Test creating cat from dictionary."""
+        cat_id = uuid.uuid4()
+        owner_id = uuid.uuid4()
+        
+        data = {
+            "id": str(cat_id),
+            "owner_id": str(owner_id),
+            "name": "Whiskers",
+            "breed": "Siamese",
+            "age": 2,
+            "owner": {},  # Should be filtered out
+            "litterbox": {}  # Should be filtered out
+        }
+        
+        cat = CatInfo.from_dict(data)
+        
+        assert cat.id == cat_id
+        assert cat.owner_id == owner_id
+        assert cat.name == "Whiskers"
+        assert cat.breed == "Siamese"
+        assert cat.age == 2
+
+
+class TestLitterboxInfo:
+    """Tests for LitterboxInfo model."""
+    
+    def test_litterbox_creation(self, db_session, sample_user, sample_cat, sample_litterbox):
+        """Test creating a litterbox."""
+        db_session.add(sample_user)
+        sample_cat.owner = sample_user
+        db_session.add(sample_cat)
+        sample_litterbox.cat = sample_cat
+        db_session.add(sample_litterbox)
+        db_session.commit()
+        
+        assert sample_litterbox.id is not None
+        assert isinstance(sample_litterbox.id, uuid.UUID)
+        assert sample_litterbox.name == "Main Litterbox"
+        assert sample_litterbox.cat_id == sample_cat.id
+    
+    def test_litterbox_cat_relationship(self, db_session, sample_user, sample_cat, sample_litterbox):
+        """Test litterbox-cat relationship."""
+        sample_litterbox.cat = sample_cat
+        db_session.add(sample_user)
+        sample_cat.owner = sample_user
+        db_session.add(sample_cat)
+        db_session.add(sample_litterbox)
+        db_session.commit()
+        
+        assert sample_litterbox.cat == sample_cat
+        assert sample_cat.litterbox == sample_litterbox
+    
+    def test_litterbox_repr(self, sample_litterbox):
+        """Test litterbox string representation."""
+        repr_str = repr(sample_litterbox)
+        assert "LitterboxInfo" in repr_str
+        assert sample_litterbox.name in repr_str
+    
+    def test_litterbox_to_dict(self, sample_litterbox):
+        """Test converting litterbox to dictionary."""
+        litterbox_dict = sample_litterbox.to_dict()
+        
+        assert litterbox_dict["name"] == "Main Litterbox"
+        assert isinstance(litterbox_dict["cat_id"], str)
+    
+    def test_litterbox_from_dict(self):
+        """Test creating litterbox from dictionary."""
+        litterbox_id = uuid.uuid4()
+        cat_id = uuid.uuid4()
+        
+        data = {
+            "id": str(litterbox_id),
+            "cat_id": str(cat_id),
+            "name": "Secondary Box",
+            "cat": {},  # Should be filtered out
+            "litterbox_usage_data": []  # Should be filtered out
+        }
+        
+        litterbox = LitterboxInfo.from_dict(data)
+        
+        assert litterbox.id == litterbox_id
+        assert litterbox.cat_id == cat_id
+        assert litterbox.name == "Secondary Box"
+
+
+class TestLitterboxEdgeDeviceInfo:
+    """Tests for LitterboxEdgeDeviceInfo model."""
+    
+    def test_edge_device_creation(self, db_session, sample_user, sample_cat, sample_litterbox, sample_edge_device):
+        """Test creating an edge device."""
+        db_session.add(sample_user)
+        sample_cat.owner = sample_user
+        db_session.add(sample_cat)
+        sample_litterbox.cat = sample_cat
+        db_session.add(sample_litterbox)
+        sample_edge_device.litterbox = sample_litterbox
+        db_session.add(sample_edge_device)
+        db_session.commit()
+        
+        assert sample_edge_device.id is not None
+        assert isinstance(sample_edge_device.id, uuid.UUID)
+        assert sample_edge_device.device_name == "Smart Litterbox Sensor"
+        assert sample_edge_device.device_type == "weight_sensor"
+        assert sample_edge_device.litterbox_id == sample_litterbox.id
+    
+    def test_edge_device_litterbox_relationship(self, db_session, sample_user, sample_cat, sample_litterbox, sample_edge_device):
+        """Test edge device-litterbox relationship."""
+        sample_edge_device.litterbox = sample_litterbox
+        db_session.add(sample_user)
+        sample_cat.owner = sample_user
+        db_session.add(sample_cat)
+        sample_litterbox.cat = sample_cat
+        db_session.add(sample_litterbox)
+        db_session.add(sample_edge_device)
+        db_session.commit()
+        
+        assert sample_edge_device.litterbox == sample_litterbox
+        assert sample_litterbox.litterbox_edge_device == sample_edge_device
+    
+    def test_edge_device_repr(self, sample_edge_device):
+        """Test edge device string representation."""
+        repr_str = repr(sample_edge_device)
+        assert "LitterboxEdgeDeviceInfo" in repr_str
+        assert sample_edge_device.device_name in repr_str
+        assert sample_edge_device.device_type in repr_str
+    
+    def test_edge_device_to_dict(self, sample_edge_device):
+        """Test converting edge device to dictionary."""
+        device_dict = sample_edge_device.to_dict()
+        
+        assert device_dict["device_name"] == "Smart Litterbox Sensor"
+        assert device_dict["device_type"] == "weight_sensor"
+        assert isinstance(device_dict["litterbox_id"], str)
+    
+    def test_edge_device_from_dict(self):
+        """Test creating edge device from dictionary."""
+        device_id = uuid.uuid4()
+        litterbox_id = uuid.uuid4()
+        created_at = datetime.now(timezone.utc)
+        
+        data = {
+            "id": str(device_id),
+            "litterbox_id": str(litterbox_id),
+            "device_name": "Test Sensor",
+            "device_type": "motion_sensor",
+            "created_at": created_at.isoformat(),
+            "litterbox": {},  # Should be filtered out
+            "litterbox_usage_data": []  # Should be filtered out
+        }
+        
+        device = LitterboxEdgeDeviceInfo.from_dict(data)
+        
+        assert device.id == device_id
+        assert device.litterbox_id == litterbox_id
+        assert device.device_name == "Test Sensor"
+        assert device.device_type == "motion_sensor"
+        assert device.created_at == created_at
+
+
+class TestLitterboxUsageData:
+    """Tests for LitterboxUsageData model."""
+    
+    def test_usage_data_creation(self, db_session, sample_user, sample_cat, sample_litterbox, sample_edge_device, sample_usage_data):
+        """Test creating usage data."""
+        db_session.add(sample_user)
+        sample_cat.owner = sample_user
+        db_session.add(sample_cat)
+        sample_litterbox.cat = sample_cat
+        db_session.add(sample_litterbox)
+        sample_edge_device.litterbox = sample_litterbox
+        db_session.add(sample_edge_device)
+        sample_usage_data.litterbox_edge_device = sample_edge_device
+        db_session.add(sample_usage_data)
+        db_session.commit()
+        
+        assert sample_usage_data.id is not None
+        assert isinstance(sample_usage_data.id, uuid.UUID)
+        assert sample_usage_data.weight_enter == 5.2
+        assert sample_usage_data.weight_exit == 5.0
+        assert sample_usage_data.litterbox_edge_device_id == sample_edge_device.id
+    
+    def test_usage_data_edge_device_relationship(self, db_session, sample_user, sample_cat, sample_litterbox, sample_edge_device, sample_usage_data):
+        """Test usage data-edge device relationship."""
+        sample_usage_data.litterbox_edge_device = sample_edge_device
+        db_session.add(sample_user)
+        sample_cat.owner = sample_user
+        db_session.add(sample_cat)
+        sample_litterbox.cat = sample_cat
+        db_session.add(sample_litterbox)
+        sample_edge_device.litterbox = sample_litterbox
+        db_session.add(sample_edge_device)
+        db_session.add(sample_usage_data)
+        db_session.commit()
+        
+        assert sample_usage_data.litterbox_edge_device == sample_edge_device
+        assert sample_usage_data in sample_edge_device.litterbox_usage_data
+    
+    def test_usage_data_repr(self, sample_usage_data):
+        """Test usage data string representation."""
+        repr_str = repr(sample_usage_data)
         assert "LitterboxUsageData" in repr_str
-
-    def test_from_dict_with_id(self, sample_dict_data: dict):
-        """Test from_dict class method with provided ID."""
-        test_id = uuid.uuid4()
-        sample_dict_data["id"] = test_id
-
-        usage = LitterboxUsageData.from_dict(sample_dict_data)
-
-        assert usage.id == test_id
-        assert usage.cat_id == sample_dict_data["cat_id"]
-        assert usage.litterbox_id == sample_dict_data["litterbox_id"]
-        assert usage.enter_time == sample_dict_data["enter_time"]
-        assert usage.exit_time == sample_dict_data["exit_time"]
-        assert usage.weight_enter == sample_dict_data["weight_enter"]
-        assert usage.weight_exit == sample_dict_data["weight_exit"]
-        assert usage.timestamp == sample_dict_data["timestamp"]
-
-    def test_from_dict_without_id_generates_uuid(self, sample_dict_data):
-        """Test from_dict class method without ID. uuid will be generated."""
-        usage = LitterboxUsageData.from_dict(sample_dict_data)
-
-        assert isinstance(usage.id, uuid.UUID)
-        assert usage.cat_id == sample_dict_data["cat_id"]
-
-    def test_to_dict_method(self, sample_data):
-        """Test to_dict method."""
-        usage = LitterboxUsageData(**sample_data)
-        result_dict = usage.to_dict()
-
-        assert result_dict["id"] == str(sample_data["id"])
-        assert result_dict["cat_id"] == sample_data["cat_id"]
-        assert result_dict["litterbox_id"] == sample_data["litterbox_id"]
-        assert result_dict["enter_time"] == sample_data["enter_time"].isoformat()
-        assert result_dict["exit_time"] == sample_data["exit_time"].isoformat()
-        assert result_dict["weight_enter"] == sample_data["weight_enter"]
-        assert result_dict["weight_exit"] == sample_data["weight_exit"]
-        assert result_dict["timestamp"] == sample_data["timestamp"].isoformat()
-
-    def test_to_dict_datetime_serialization(self):
-        """Test that to_dict properly serializes datetime objects."""
-        enter_time = datetime(2024, 3, 15, 9, 30, 45)
-        usage = LitterboxUsageData(
-            cat_id=1,
-            litterbox_id=1,
-            enter_time=enter_time,
-            exit_time=datetime(2024, 3, 15, 9, 35, 45),
-            weight_enter=4.0,
-            weight_exit=3.8,
-            timestamp=datetime(2024, 3, 15, 9, 36, 0),
-        )
-
-        result = usage.to_dict()
-        assert result["enter_time"] == "2024-03-15T09:30:45"
-
-    def test_from_dict_to_dict_roundtrip(self, sample_dict_data):
-        """Test roundtrip conversion from dict to model and back."""
-        # Add ID to ensure consistent roundtrip
-        test_id = uuid.uuid4()
-        sample_dict_data["id"] = test_id
-
-        usage = LitterboxUsageData.from_dict(sample_dict_data)
-        result_dict = usage.to_dict()
-
-        assert result_dict["id"] == str(test_id)
-        assert result_dict["cat_id"] == sample_dict_data["cat_id"]
-        # Note: datetime objects are serialized to ISO format strings
-        assert result_dict["enter_time"] == sample_dict_data["enter_time"].isoformat()
+        assert "5.2" in repr_str
+        assert "5.0" in repr_str
+    
+    def test_usage_data_to_dict(self, sample_usage_data):
+        """Test converting usage data to dictionary."""
+        usage_dict = sample_usage_data.to_dict()
+        
+        assert usage_dict["weight_enter"] == 5.2
+        assert usage_dict["weight_exit"] == 5.0
+        assert isinstance(usage_dict["litterbox_edge_device_id"], str)
+        assert "enter_time" in usage_dict
+        assert "exit_time" in usage_dict
+    
+    def test_usage_data_from_dict(self):
+        """Test creating usage data from dictionary."""
+        usage_id = uuid.uuid4()
+        device_id = uuid.uuid4()
+        enter_time = datetime.now(timezone.utc)
+        exit_time = datetime.now(timezone.utc)
+        created_at = datetime.now(timezone.utc)
+        
+        data = {
+            "id": str(usage_id),
+            "litterbox_edge_device_id": str(device_id),
+            "enter_time": enter_time.isoformat(),
+            "exit_time": exit_time.isoformat(),
+            "weight_enter": 4.5,
+            "weight_exit": 4.3,
+            "created_at": created_at.isoformat(),
+            "litterbox_edge_device": {}  # Should be filtered out
+        }
+        
+        usage = LitterboxUsageData.from_dict(data)
+        
+        assert usage.id == usage_id
+        assert usage.litterbox_edge_device_id == device_id
+        assert usage.enter_time == enter_time
+        assert usage.exit_time == exit_time
+        assert usage.weight_enter == 4.5
+        assert usage.weight_exit == 4.3
+        assert usage.created_at == created_at
 
 
-# class TestLitterboxUsageDataDatabase:
-#     """Test database operations for LitterboxUsageData model."""
-
-#     def test_save_to_database(self, session, sample_data):
-#         """Test saving a LitterboxUsageData instance to the database."""
-#         usage = LitterboxUsageData(**sample_data)
-#         session.add(usage)
-#         session.commit()
-
-#         # Query back from database
-#         saved_usage = session.query(LitterboxUsageData).filter_by(id=usage.id).first()
-#         assert saved_usage is not None
-#         assert saved_usage.cat_id == sample_data["cat_id"]
-#         assert saved_usage.weight_enter == sample_data["weight_enter"]
-
-#     def test_query_by_cat_id(self, session, sample_data):
-#         """Test querying by cat_id (which has an index)."""
-#         usage1 = LitterboxUsageData(**sample_data)
-
-#         # Create second usage data with different cat_id
-#         sample_data2 = sample_data.copy()
-#         sample_data2["id"] = uuid.uuid4()
-#         sample_data2["cat_id"] = 2
-#         usage2 = LitterboxUsageData(**sample_data2)
-
-#         session.add_all([usage1, usage2])
-#         session.commit()
-
-#         # Query by cat_id
-#         cat_1_usages = session.query(LitterboxUsageData).filter_by(cat_id=1).all()
-#         assert len(cat_1_usages) == 1
-#         assert cat_1_usages[0].cat_id == 1
-
-#     def test_query_by_timestamp_index(self, session):
-#         """Test querying by timestamp (which has an index)."""
-#         base_time = datetime(2024, 1, 15, 10, 0, 0)
-
-#         # Create multiple usage records with different timestamps
-#         usages = []
-#         for i in range(3):
-#             usage = LitterboxUsageData(
-#                 cat_id=1,
-#                 litterbox_id=1,
-#                 enter_time=base_time,
-#                 exit_time=base_time,
-#                 weight_enter=4.0,
-#                 weight_exit=3.8,
-#                 timestamp=datetime(2024, 1, 15, 10, i * 10, 0),  # Different timestamps
-#             )
-#             usages.append(usage)
-
-#         session.add_all(usages)
-#         session.commit()
-
-#         # Query by timestamp range
-#         start_time = datetime(2024, 1, 15, 10, 5, 0)
-#         end_time = datetime(2024, 1, 15, 10, 25, 0)
-
-#         filtered_usages = (
-#             session.query(LitterboxUsageData)
-#             .filter(LitterboxUsageData.timestamp.between(start_time, end_time))
-#             .all()
-#         )
-
-#         assert len(filtered_usages) == 2
-
-#     def test_update_record(self, session, sample_data):
-#         """Test updating a record in the database."""
-#         usage = LitterboxUsageData(**sample_data)
-#         session.add(usage)
-#         session.commit()
-
-#         # Update the record
-#         usage.weight_exit = 4.0
-#         session.commit()
-
-#         # Verify update
-#         updated_usage = session.query(LitterboxUsageData).filter_by(id=usage.id).first()
-#         assert updated_usage.weight_exit == 4.0
-
-#     def test_delete_record(self, session, sample_data):
-#         """Test deleting a record from the database."""
-#         usage = LitterboxUsageData(**sample_data)
-#         session.add(usage)
-#         session.commit()
-
-#         # Delete the record
-#         session.delete(usage)
-#         session.commit()
-
-#         # Verify deletion
-#         deleted_usage = session.query(LitterboxUsageData).filter_by(id=usage.id).first()
-#         assert deleted_usage is None
-
-#     def test_multiple_records_same_cat(self, session):
-#         """Test storing multiple records for the same cat."""
-#         cat_id = 1
-#         records = []
-
-#         for i in range(3):
-#             usage = LitterboxUsageData(
-#                 cat_id=cat_id,
-#                 litterbox_id=i + 1,
-#                 enter_time=datetime(2024, 1, 15, 10, i * 10, 0),
-#                 exit_time=datetime(2024, 1, 15, 10, i * 10 + 5, 0),
-#                 weight_enter=4.0 + i * 0.1,
-#                 weight_exit=3.8 + i * 0.1,
-#                 timestamp=datetime(2024, 1, 15, 10, i * 10 + 6, 0),
-#             )
-#             records.append(usage)
-
-#         session.add_all(records)
-#         session.commit()
-
-#         # Verify all records saved
-#         saved_records = session.query(LitterboxUsageData).filter_by(cat_id=cat_id).all()
-#         assert len(saved_records) == 3
-
-#     def test_table_name(self):
-#         """Test that the table name is set correctly."""
-#         assert LitterboxUsageData.__tablename__ == "litterbox_usage_data"
-
-#     def test_primary_key_constraint(self, session):
-#         """Test primary key constraint."""
-#         test_id = uuid.uuid4()
-#         usage1 = LitterboxUsageData(
-#             id=test_id,
-#             cat_id=1,
-#             litterbox_id=1,
-#             enter_time=datetime.now(),
-#             exit_time=datetime.now(),
-#             weight_enter=4.0,
-#             weight_exit=3.8,
-#             timestamp=datetime.now(),
-#         )
-
-#         usage2 = LitterboxUsageData(
-#             id=test_id,  # Same ID
-#             cat_id=2,
-#             litterbox_id=2,
-#             enter_time=datetime.now(),
-#             exit_time=datetime.now(),
-#             weight_enter=4.0,
-#             weight_exit=3.8,
-#             timestamp=datetime.now(),
-#         )
-
-#         session.add(usage1)
-#         session.commit()
-
-#         session.add(usage2)
-#         with pytest.raises(IntegrityError):
-#             session.commit()
+class TestCascadeDeletes:
+    """Test cascade delete functionality."""
+    
+    def test_user_delete_cascades_to_cats(self, db_session, sample_user, sample_cat):
+        """Test that deleting a user deletes their cats."""
+        sample_cat.owner = sample_user
+        db_session.add(sample_user)
+        db_session.add(sample_cat)
+        db_session.commit()
+        
+        cat_id = sample_cat.id
+        
+        db_session.delete(sample_user)
+        db_session.commit()
+        
+        # Cat should be deleted due to cascade
+        deleted_cat = db_session.query(CatInfo).filter_by(id=cat_id).first()
+        assert deleted_cat is None
+    
+    def test_litterbox_delete_cascades_to_usage_data(self, db_session, sample_user, sample_cat, sample_litterbox, sample_edge_device, sample_usage_data):
+        """Test that deleting a litterbox deletes its usage data."""
+        # Set up relationships
+        sample_cat.owner = sample_user
+        sample_litterbox.cat = sample_cat
+        sample_edge_device.litterbox = sample_litterbox
+        sample_usage_data.litterbox_edge_device = sample_edge_device
+        
+        db_session.add_all([sample_user, sample_cat, sample_litterbox, sample_edge_device, sample_usage_data])
+        db_session.commit()
+        
+        usage_id = sample_usage_data.id
+        device_id = sample_edge_device.id
+        
+        db_session.delete(sample_litterbox)
+        db_session.commit()
+        
+        # Usage data and edge device should be deleted due to cascade
+        deleted_usage = db_session.query(LitterboxUsageData).filter_by(id=usage_id).first()
+        deleted_device = db_session.query(LitterboxEdgeDeviceInfo).filter_by(id=device_id).first()
+        
+        assert deleted_usage is None
+        assert deleted_device is None
 
 
-# class TestLitterboxUsageDataValidation:
-#     """Test validation and edge cases for LitterboxUsageData model."""
-
-#     def test_missing_required_fields(self):
-#         """Test that missing required fields raise appropriate errors."""
-#         with pytest.raises(TypeError):
-#             LitterboxUsageData()  # Missing required fields
-
-#     def test_weight_calculations(self, sample_data):
-#         """Test weight difference calculations."""
-#         usage = LitterboxUsageData(**sample_data)
-#         weight_diff = usage.weight_enter - usage.weight_exit
-#         assert weight_diff == 0.2  # 4.5 - 4.3
-
-#     def test_duration_calculation(self, sample_data):
-#         """Test duration calculation between enter and exit times."""
-#         usage = LitterboxUsageData(**sample_data)
-#         duration = usage.exit_time - usage.enter_time
-#         assert duration.total_seconds() == 300  # 5 minutes
-
-#     def test_negative_weights(self):
-#         """Test handling of negative weights."""
-#         usage = LitterboxUsageData(
-#             cat_id=1,
-#             litterbox_id=1,
-#             enter_time=datetime.now(),
-#             exit_time=datetime.now(),
-#             weight_enter=-1.0,  # Negative weight
-#             weight_exit=3.8,
-#             timestamp=datetime.now(),
-#         )
-#         # Model should accept negative weights (validation can be added at application level)
-#         assert usage.weight_enter == -1.0
-
-#     def test_zero_weights(self):
-#         """Test handling of zero weights."""
-#         usage = LitterboxUsageData(
-#             cat_id=1,
-#             litterbox_id=1,
-#             enter_time=datetime.now(),
-#             exit_time=datetime.now(),
-#             weight_enter=0.0,
-#             weight_exit=0.0,
-#             timestamp=datetime.now(),
-#         )
-#         assert usage.weight_enter == 0.0
-#         assert usage.weight_exit == 0.0
-
-#     def test_exit_before_enter_time(self):
-#         """Test when exit time is before enter time."""
-#         enter_time = datetime(2024, 1, 15, 10, 30, 0)
-#         exit_time = datetime(2024, 1, 15, 10, 25, 0)  # 5 minutes earlier
-
-#         usage = LitterboxUsageData(
-#             cat_id=1,
-#             litterbox_id=1,
-#             enter_time=enter_time,
-#             exit_time=exit_time,
-#             weight_enter=4.0,
-#             weight_exit=3.8,
-#             timestamp=datetime.now(),
-#         )
-
-#         # Model accepts this (validation can be added at application level)
-#         assert usage.enter_time > usage.exit_time
+class TestDataIntegrity:
+    """Test data integrity and validation."""
+    
+    def test_required_fields(self, db_session):
+        """Test that required fields are enforced."""
+        # Test UserInfo with missing username
+        with pytest.raises((IntegrityError, TypeError)):
+            user = UserInfo(email="test@example.com", password_hash="hash")
+            db_session.add(user)
+            db_session.commit()
+    
+    def test_foreign_key_constraints(self, db_session):
+        """Test foreign key constraints."""
+        # Try to create a cat with non-existent owner_id
+        cat = CatInfo(name="Orphan Cat")
+        
+        db_session.add(cat)
+        with pytest.raises(IntegrityError):
+            db_session.commit()
+    
+    # def test_datetime_handling(self, db_session, sample_user):
+    #     """Test that datetime fields are handled correctly."""
+    #     db_session.add(sample_user)
+    #     db_session.commit()
+    #     assert sample_user.created_at is not None
+    #     assert isinstance(sample_user.created_at, datetime)
+    #     assert sample_user.created_at.tzinfo == timezone.utc
