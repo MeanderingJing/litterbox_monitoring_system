@@ -40,7 +40,6 @@ class UserInfo(Base):
     def __repr__(self) -> str:
         return f"<UserInfo(id={self.id}, username={self.username}, email={self.email})>"
 
-
     def to_dict(self, include_relationships: bool = False) -> Dict[str, Any]:
         """Convert UserInfo instance to dictionary."""
         result = {
@@ -51,10 +50,10 @@ class UserInfo(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-        
-        if include_relationships and hasattr(self, 'cats'):
+
+        if include_relationships and hasattr(self, "cats"):
             result["cats"] = [cat.to_dict() for cat in self.cats]
-            
+
         return result
 
     @classmethod
@@ -63,16 +62,16 @@ class UserInfo(Base):
         # Convert string UUID back to UUID object if present
         if "id" in data and isinstance(data["id"], str):
             data["id"] = uuid.UUID(data["id"])
-        
+
         # Convert ISO datetime strings back to datetime objects
         if "created_at" in data and isinstance(data["created_at"], str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
         if "updated_at" in data and isinstance(data["updated_at"], str):
             data["updated_at"] = datetime.fromisoformat(data["updated_at"])
-        
+
         # Remove relationships from data as they should be handled separately
         clean_data = {k: v for k, v in data.items() if k not in ["cats"]}
-        
+
         return cls(**clean_data)
 
 
@@ -115,13 +114,13 @@ class CatInfo(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-        
+
         if include_relationships:
-            if hasattr(self, 'owner') and self.owner:
+            if hasattr(self, "owner") and self.owner:
                 result["owner"] = self.owner.to_dict()
-            if hasattr(self, 'litterbox') and self.litterbox:
+            if hasattr(self, "litterbox") and self.litterbox:
                 result["litterbox"] = self.litterbox.to_dict()
-                
+
         return result
 
     @classmethod
@@ -132,22 +131,25 @@ class CatInfo(Base):
             data["id"] = uuid.UUID(data["id"])
         if "owner_id" in data and isinstance(data["owner_id"], str):
             data["owner_id"] = uuid.UUID(data["owner_id"])
-        
+
         # Convert ISO datetime strings back to datetime objects
         if "created_at" in data and isinstance(data["created_at"], str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
         if "updated_at" in data and isinstance(data["updated_at"], str):
             data["updated_at"] = datetime.fromisoformat(data["updated_at"])
-        
+
         # Remove relationships from data
         clean_data = {k: v for k, v in data.items() if k not in ["owner", "litterbox"]}
-        
+
         return cls(**clean_data)
-    
+
+
 class LitterboxInfo(Base):
     __tablename__ = "litterbox_info"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     cat_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("cat_info.id"), nullable=False
     )
@@ -162,14 +164,14 @@ class LitterboxInfo(Base):
     # Relationships
     cat: Mapped["CatInfo"] = relationship("CatInfo", back_populates="litterbox")
     litterbox_edge_device: Mapped["LitterboxEdgeDeviceInfo"] = relationship(
-        "LitterboxEdgeDeviceInfo", back_populates="litterbox", cascade="all, delete-orphan"
+        "LitterboxEdgeDeviceInfo",
+        back_populates="litterbox",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<LitterboxInfo(id={self.id}, cat_id={self.cat_id}, name={self.name})>"
-        )
-    
+        return f"<LitterboxInfo(id={self.id}, cat_id={self.cat_id}, name={self.name})>"
+
     def to_dict(self, include_relationships: bool = False) -> Dict[str, Any]:
         """Convert LitterboxInfo instance to dictionary."""
         result = {
@@ -179,13 +181,15 @@ class LitterboxInfo(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-        
+
         if include_relationships:
-            if hasattr(self, 'cat') and self.cat:
+            if hasattr(self, "cat") and self.cat:
                 result["cat"] = self.cat.to_dict()
-            if hasattr(self, 'litterbox_usage_data'):
-                result["litterbox_usage_data"] = [usage.to_dict() for usage in self.litterbox_usage_data]
-                
+            if hasattr(self, "litterbox_usage_data"):
+                result["litterbox_usage_data"] = [
+                    usage.to_dict() for usage in self.litterbox_usage_data
+                ]
+
         return result
 
     @classmethod
@@ -196,24 +200,27 @@ class LitterboxInfo(Base):
             data["id"] = uuid.UUID(data["id"])
         if "cat_id" in data and isinstance(data["cat_id"], str):
             data["cat_id"] = uuid.UUID(data["cat_id"])
-        
+
         # Convert ISO datetime strings back to datetime objects
         if "created_at" in data and isinstance(data["created_at"], str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
         if "updated_at" in data and isinstance(data["updated_at"], str):
             data["updated_at"] = datetime.fromisoformat(data["updated_at"])
-        
+
         # Remove relationships from data
-        clean_data = {k: v for k, v in data.items() if k not in ["cat", "litterbox_usage_data"]}
-        
+        clean_data = {
+            k: v for k, v in data.items() if k not in ["cat", "litterbox_usage_data"]
+        }
+
         return cls(**clean_data)
-    
+
+
 class LitterboxEdgeDeviceInfo(Base):
     __tablename__ = "litterbox_edge_device_info"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True
-    ) # Must be provided by the user
+    )  # Must be provided by the user
     litterbox_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("litterbox_info.id"), nullable=False
     )
@@ -228,7 +235,9 @@ class LitterboxEdgeDeviceInfo(Base):
         "LitterboxInfo", back_populates="litterbox_edge_device"
     )
     litterbox_usage_data: Mapped[list["LitterboxUsageData"]] = relationship(
-        "LitterboxUsageData", back_populates="litterbox_edge_device", cascade="all, delete-orphan"
+        "LitterboxUsageData",
+        back_populates="litterbox_edge_device",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -247,14 +256,17 @@ class LitterboxEdgeDeviceInfo(Base):
             "device_type": self.device_type,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
-        
+
         if include_relationships:
-            if hasattr(self, 'litterbox') and self.litterbox:
+            if hasattr(self, "litterbox") and self.litterbox:
                 result["litterbox"] = self.litterbox.to_dict()
-            if hasattr(self, 'litterbox_usage_data'):
-                result["litterbox_usage_data"] = [usage.to_dict() for usage in self.litterbox_usage_data]
-                
+            if hasattr(self, "litterbox_usage_data"):
+                result["litterbox_usage_data"] = [
+                    usage.to_dict() for usage in self.litterbox_usage_data
+                ]
+
         return result
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LitterboxEdgeDeviceInfo":
         """Create LitterboxEdgeDeviceInfo instance from dictionary."""
@@ -264,14 +276,18 @@ class LitterboxEdgeDeviceInfo(Base):
             data["id"] = uuid.UUID(data["id"])
         if "litterbox_id" in data and isinstance(data["litterbox_id"], str):
             data["litterbox_id"] = uuid.UUID(data["litterbox_id"])
-        
+
         # Convert ISO datetime strings back to datetime objects
         if "created_at" in data and isinstance(data["created_at"], str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
-        
+
         # Remove relationships from data
-        clean_data = {k: v for k, v in data.items() if k not in ["litterbox", "litterbox_usage_data"]}
-        
+        clean_data = {
+            k: v
+            for k, v in data.items()
+            if k not in ["litterbox", "litterbox_usage_data"]
+        }
+
         return cls(**clean_data)
 
 
@@ -291,7 +307,6 @@ class LitterboxUsageData(Base):
     created_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(timezone.utc), nullable=False
     )
-    
 
     # Relationship
     litterbox_edge_device: Mapped["LitterboxEdgeDeviceInfo"] = relationship(
@@ -305,7 +320,7 @@ class LitterboxUsageData(Base):
             f"weight_enter={self.weight_enter}, weight_exit={self.weight_exit},"
             f"created_at={self.created_at})>"
         )
-    
+
     def to_dict(self, include_relationships: bool = False) -> Dict[str, Any]:
         """Convert LitterboxUsageData instance to dictionary."""
         result = {
@@ -317,11 +332,11 @@ class LitterboxUsageData(Base):
             "weight_exit": self.weight_exit,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
-        
+
         if include_relationships:
-            if hasattr(self, 'litterbox') and self.litterbox_edge_device:
+            if hasattr(self, "litterbox") and self.litterbox_edge_device:
                 result["litterbox_edge_device"] = self.litterbox_edge_device.to_dict()
-                
+
         return result
 
     @classmethod
@@ -330,17 +345,22 @@ class LitterboxUsageData(Base):
         # Convert string UUIDs back to UUID objects
         if "id" in data and isinstance(data["id"], str):
             data["id"] = uuid.UUID(data["id"])
-        if "litterbox_edge_device_id" in data and isinstance(data["litterbox_edge_device_id"], str):
-            data["litterbox_edge_device_id"] = uuid.UUID(data["litterbox_edge_device_id"])
-        
+        if "litterbox_edge_device_id" in data and isinstance(
+            data["litterbox_edge_device_id"], str
+        ):
+            data["litterbox_edge_device_id"] = uuid.UUID(
+                data["litterbox_edge_device_id"]
+            )
+
         # Convert ISO datetime strings back to datetime objects
         datetime_fields = ["enter_time", "exit_time", "created_at"]
         for field in datetime_fields:
             if field in data and isinstance(data[field], str):
                 data[field] = datetime.fromisoformat(data[field])
-        
-        # Remove relationships from data
-        clean_data = {k: v for k, v in data.items() if k not in ["litterbox_edge_device"]}
-        
-        return cls(**clean_data)
 
+        # Remove relationships from data
+        clean_data = {
+            k: v for k, v in data.items() if k not in ["litterbox_edge_device"]
+        }
+
+        return cls(**clean_data)
