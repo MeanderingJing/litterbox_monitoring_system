@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from config.logging import get_logger
-from models.litterbox_usage_data import Base, LitterboxUsageData
+from models.models import Base, LitterboxUsageData
 
 from .gateway import DatabaseGateway
 

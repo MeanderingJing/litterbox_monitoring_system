@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 
 from database.postgresql_gateway import PostgreSQLGateway
-from models.litterbox_usage_data import LitterboxUsageData
+from models.models import LitterboxUsageData
 
 
 # Test fixtures
