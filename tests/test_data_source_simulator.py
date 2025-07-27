@@ -35,18 +35,21 @@ class TestLitterboxSimulator:
             mock_dt.side_effect = lambda *args, **kw: datetime(*args, **kw)
             yield mock_dt
 
-    def test_init_sets_correct_week_start(self, mock_datetime_now):
-        """Test that simulator initializes with correct week start date"""
+    @pytest.fixture
+    def simulator_with_fixed_date(self, mock_datetime_now):
+        """Create a simulator instance with fixed date"""
         with patch(
             "data_source_simulator.litterbox_edge_device_simulator.get_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
-            simulator = LitterboxSimulator()
+            return LitterboxSimulator()
 
-            expected_start = datetime(
-                2024, 1, 8, 0, 0, 0, tzinfo=timezone.utc
-            )  # 7 days ago
-            assert simulator.current_week_start == expected_start
+    def test_init_sets_correct_week_start(self, simulator_with_fixed_date):
+        """Test that simulator initializes with correct week start date"""
+        expected_start = datetime(
+            2024, 1, 8, 0, 0, 0, tzinfo=timezone.utc
+        )  # 7 days ago
+        assert simulator_with_fixed_date.current_week_start == expected_start
 
     def test_constants(self):
         """Test that constants are properly defined"""
