@@ -3,7 +3,7 @@ import random
 import schedule
 import time
 from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict
 import json
 
 from models.models import LitterboxUsageData

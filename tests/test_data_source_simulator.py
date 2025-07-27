@@ -1,10 +1,8 @@
 import pytest
 import uuid
-import json
-import os
 from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, mock_open, MagicMock
-from typing import List, Dict
+from unittest.mock import Mock, patch, mock_open
+
 
 # Import the module under test
 from data_source_simulator.litterbox_edge_device_simulator import (
@@ -292,7 +290,7 @@ class TestWeightDataRealism:
         """Test that weight data follows realistic distribution"""
         urine_only_count = 0
         both_count = 0
-        feces_only_count = 0
+        # feces_only_count = 0
 
         # Generate many samples to test distribution
         for _ in range(1000):
