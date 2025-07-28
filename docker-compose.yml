@@ -1,19 +1,33 @@
-# Write a docker compose file to run a postgres database with a specific version and a volume for data persistence.
 version: '3.8'
 services:
   db:
-    image: postgres:latest
-    container_name: postgres_db
+    image: postgres:16
+    container_name: litterbox_postgres_db
     environment:
       POSTGRES_USER: example_user
       POSTGRES_PASSWORD: example_password
       POSTGRES_DB: example_db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./docker-data/.pg-data:/var/lib/postgresql/data
     ports:
       - "5435:5432"
+  
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: litterbox-rabbitmq-server
+    ports:
+      - "15672:15672"  # RabbitMQ Management UI
+      - "5672:5672"    # RabbitMQ AMQP protocol
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - ./.docker-data/.rabbitmq-data:/var/lib/rabbitmq
 
-volumes:
-  pgdata:
-    driver: local
-    name: pgdata_volume
+
+
