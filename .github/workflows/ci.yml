@@ -2,7 +2,7 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - feature/litterbox_edge_device_data_simulator
+      - feature/rabbitmq_integration
   pull_request:
     branches:
       - main

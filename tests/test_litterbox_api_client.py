@@ -3,7 +3,7 @@
 import pytest
 import requests
 
-from data_collector.litterbox_api_client import (
+from data_persister.db_writer import (
     LITTERBOX_API_URL,
     get_litterbox_usage_data,
 )

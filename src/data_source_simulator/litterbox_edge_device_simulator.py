@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+import os
 import uuid
 import random
 import schedule
@@ -5,11 +7,22 @@ import time
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict
 import json
+import logging
+import pika
 
 from models.models import LitterboxUsageData
+from rabbitmq_support.rabbitmq_gateway import (
+    CONNECTION_PARAMS,
+    EXCHANGE_NAME,
+    EXCHANGE_TYPE,
+    get_rabbitmq_connection,
+)
 from config.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Optionally reduce Pika log verbosity
+get_logger("pika").setLevel(logging.WARNING)
 
 # Pre-defined edge device ID
 EDGE_DEVICE_ID = uuid.UUID("12345678-1234-5678-9012-123456789abc")
@@ -27,6 +40,65 @@ class LitterboxSimulator:
         logger.info(f"Simulator initialized with edge device ID: {EDGE_DEVICE_ID}")
         logger.info(f"Initial week start (7 days ago): {self.current_week_start}")
         logger.info(f"Initial week end: {self.current_week_start + timedelta(days=6)}")
+
+        # Initialize RabbitMQ connection parameters
+        self.connection_params = CONNECTION_PARAMS
+
+
+    def publish_to_rabbitmq(self, data: Dict):
+        """Publish a single message to RabbitMQ"""
+        try:
+            with self.get_rabbitmq_connection() as channel:
+                # Declare exchange (idempotent operation)
+                channel.exchange_declare(
+                    exchange=EXCHANGE_NAME, exchange_type=EXCHANGE_TYPE, durable=True
+                )
+
+                # Convert datetime objects to ISO format strings for JSON serialization
+                serializable_data = self.prepare_data_for_serialization(data)
+
+                message_body = json.dumps(serializable_data, default=str)
+
+                channel.basic_publish(
+                    exchange=EXCHANGE_NAME,
+                    routing_key="",  # routing_key is ignored for 'fanout'
+                    body=message_body,
+                    properties=pika.BasicProperties(
+                        delivery_mode=2,  # Make message persistent
+                        content_type="application/json",
+                        timestamp=int(time.time()),
+                        message_id=str(data.get("id", uuid.uuid4())),
+                        headers={
+                            "edge_device_id": str(data.get("litterbox_edge_device_id")),
+                            "data_type": "litterbox_usage",
+                        },
+                    ),
+                )
+
+                logger.debug(f"Published message for usage ID: {data.get('id')}")
+
+        except Exception as e:
+            logger.error(f"Failed to publish message to RabbitMQ: {e}")
+            raise
+
+    def prepare_data_for_serialization(self, data: Dict) -> Dict:
+        """Convert data types for JSON serialization"""
+        serializable_data = data.copy()
+
+        # Convert UUIDs to strings
+        if "id" in serializable_data:
+            serializable_data["id"] = str(serializable_data["id"])
+        if "litterbox_edge_device_id" in serializable_data:
+            serializable_data["litterbox_edge_device_id"] = str(
+                serializable_data["litterbox_edge_device_id"]
+            )
+
+        # Convert datetime objects to ISO format
+        for key, value in serializable_data.items():
+            if isinstance(value, datetime):
+                serializable_data[key] = value.isoformat()
+
+        return serializable_data
 
     def generate_realistic_usage_times(self, base_date: datetime) -> List[datetime]:
         """Generate realistic litterbox usage times for a day"""
@@ -166,17 +238,61 @@ class LitterboxSimulator:
 
         logger.info(f"Data saved to {filename}")
 
-    def process_data(self, data: List[LitterboxUsageData]):
+    def process_data(self, data: List[Dict]):
         """
-        Process the generated data - replace this with the actual data processing logic
-        (e.g., sending to database, API, message queue, etc.)
+        Process the generated data by sending each record to RabbitMQ
         """
         logger.info(f"Processing {len(data)} usage records...")
 
-        # Example: Save to file
-        self.save_data_to_file(data)
+        successful_publishes = 0
+        failed_publishes = 0
 
-        # More processing logic can be added here...
+        # Sending to a message queue
+        try:
+            # Test connection first
+            with self.get_rabbitmq_connection() as channel:
+                logger.info("Successfully connected to RabbitMQ")
+
+            # Process each record
+            for i, record in enumerate(data, 1):
+                try:
+                    self.publish_to_rabbitmq(record)
+                    successful_publishes += 1
+
+                    # Log progress for large batches
+                    if i % 10 == 0 or i == len(data):
+                        logger.info(f"Published {i}/{len(data)} messages to RabbitMQ")
+
+                except Exception as e:
+                    failed_publishes += 1
+                    logger.error(
+                        f"Failed to publish record {record.get('id', 'unknown')}: {e}"
+                    )
+
+                    # Continue processing other records even if one fails
+                    continue
+
+            # Summary
+            logger.info(
+                f"Data processing completed: {successful_publishes} successful, {failed_publishes} failed"
+            )
+
+            # Also save to file as backup
+            if successful_publishes > 0:
+                self.save_data_to_file(
+                    data,
+                    f"backup_litterbox_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                )
+
+        except pika.exceptions.AMQPConnectionError:
+            logger.error(
+                "Could not connect to RabbitMQ. Falling back to file storage only."
+            )
+            self.save_data_to_file(data)
+        except Exception as e:
+            logger.error(f"Unexpected error during data processing: {e}")
+            # Fallback to file storage
+            self.save_data_to_file(data)
 
     def generate_initial_week(self):
         """Generate initial week's worth of data"""
@@ -233,6 +349,8 @@ class LitterboxSimulator:
 def main():
     """Main function to run the simulator"""
     simulator = LitterboxSimulator()
+    # data = simulator.generate_week_data(simulator.current_week_start)
+    # simulator.process_data(data)
     simulator.start_simulator()
 
 
