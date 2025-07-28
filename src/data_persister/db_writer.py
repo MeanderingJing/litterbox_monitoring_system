@@ -4,7 +4,7 @@ import os
 import signal
 import sys
 import time
-from typing import Dict, List
+from typing import Dict
 from datetime import datetime
 import uuid
 
