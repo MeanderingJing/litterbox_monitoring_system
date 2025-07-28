@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from config.logging import get_logger
 from models.models import Base, LitterboxUsageData
@@ -17,7 +17,7 @@ class PostgreSQLGateway(DatabaseGateway):
     def __init__(self, db_url: str):
         self.db_url = db_url
         self.engine = None
-        self.session = None
+        self.SessionLocal = None
 
         # Set up logging
         self.logger = get_logger(__name__)
@@ -26,7 +26,7 @@ class PostgreSQLGateway(DatabaseGateway):
         """Establish and test a connection to the database."""
         try:
             self.engine = create_engine(self.db_url)
-            self.session = Session(self.engine)
+            self.SessionLocal = sessionmaker(bind=self.engine) # thread safe
 
             # Trigger actual connection
             with self.engine.connect() as connection:
@@ -38,10 +38,7 @@ class PostgreSQLGateway(DatabaseGateway):
             raise
 
     def disconnect(self) -> None:
-        """Close the connection to the database."""
-        if self.session:
-            self.session.close()
-            self.session = None
+        """Dispose of the database engine connection pool"""
         if self.engine:
             self.engine.dispose()
             self.engine = None
@@ -59,13 +56,13 @@ class PostgreSQLGateway(DatabaseGateway):
         """Insert litterbox usage data into the database."""
         self.logger.info(f"Attempting to insert {len(data)} records into the database.")
         try:
-            with self.session:
+            with self.SessionLocal() as session:
                 inserted_count = 0
 
                 for record in data:
                     # check if record already exists
                     existing_record = (
-                        self.session.query(LitterboxUsageData)
+                        session.query(LitterboxUsageData)
                         .filter_by(id=record["id"])
                         .first()
                     )
@@ -77,9 +74,9 @@ class PostgreSQLGateway(DatabaseGateway):
                             f"Record with ID {record['id']} already exists."
                         )
                     new_record = LitterboxUsageData.from_dict(record)
-                    self.session.add(new_record)
+                    session.add(new_record)
                     inserted_count += 1
-                self.session.commit()
+                session.commit()
                 self.logger.info(
                     f"✅ Successfully inserted {inserted_count} records into the database."
                 )
@@ -90,14 +87,21 @@ class PostgreSQLGateway(DatabaseGateway):
 
     def get_litterbox_usage_data(self) -> List[Dict[str, Any]]:
         """Retrieve litterbox usage data from the database."""
-        return [row.__dict__ for row in self.session.query(LitterboxUsageData).all()]
+        try:
+            with self.SessionLocal() as session:
+                records = session.query(LitterboxUsageData).all()
+                return [record.__dict__ for record in records]
+        except Exception as e:
+            self.logger.error(f"Error retrieving litterbox usage data: {e}")
+            return []
+
 
     def get_latest_litterbox_usage_timestamp(self) -> Optional[str]:
         """Get the latest usage timestamp from the database."""
         try:
-            with self.session:
+            with self.SessionLocal() as session:
                 latest_record = (
-                    self.session.query(LitterboxUsageData)
+                    session.query(LitterboxUsageData)
                     .order_by(LitterboxUsageData.timestamp.desc())
                     .first()
                 )
