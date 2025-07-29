@@ -16,8 +16,8 @@ class PostgreSQLGateway(DatabaseGateway):
 
     def __init__(self, db_url: str):
         self.db_url = db_url
-        self.engine = None
-        self.SessionLocal = None
+        self.engine = create_engine(self.db_url)
+        self.SessionLocal = sessionmaker(bind=self.engine)  # thread safe
 
         # Set up logging
         self.logger = get_logger(__name__)
@@ -25,9 +25,6 @@ class PostgreSQLGateway(DatabaseGateway):
     def connect(self) -> None:
         """Establish and test a connection to the database."""
         try:
-            self.engine = create_engine(self.db_url)
-            self.SessionLocal = sessionmaker(bind=self.engine) # thread safe
-
             # Trigger actual connection
             with self.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
@@ -94,7 +91,6 @@ class PostgreSQLGateway(DatabaseGateway):
         except Exception as e:
             self.logger.error(f"Error retrieving litterbox usage data: {e}")
             return []
-
 
     def get_latest_litterbox_usage_timestamp(self) -> Optional[str]:
         """Get the latest usage timestamp from the database."""

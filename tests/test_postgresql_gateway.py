@@ -89,8 +89,8 @@ class TestPostgreSQLGatewayInit:
         gateway = PostgreSQLGateway(db_url)
 
         assert gateway.db_url == db_url
-        assert gateway.engine is None
-        assert gateway.SessionLocal is None
+        assert gateway.engine is not None
+        assert gateway.SessionLocal is not None
         assert gateway.logger is not None
 
 
