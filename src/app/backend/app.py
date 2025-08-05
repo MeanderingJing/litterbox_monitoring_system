@@ -143,7 +143,7 @@ def create_cat():
 def create_litterbox():
     current_user_id = get_jwt_identity()
     data = request.get_json()
-    session = g.dbsession()
+    session = g.db_session
 
     cat = session.query(CatInfo).get(data["cat_id"])
     if not cat or str(cat.owner_id) != current_user_id:
@@ -167,7 +167,7 @@ def create_litterbox():
 def register_edge_devices():
     current_user_id = get_jwt_identity()
     data = request.get_json()
-    session = g.dbsession()
+    session = g.db_session
 
     litterbox = session.query(LitterboxInfo).get(data['litterbox_id'])
     if not litterbox:
@@ -193,6 +193,71 @@ def register_edge_devices():
         'device_name': data['device_name'],
         'device_type': data['device_type']
     })
+
+@app.route("/cats", methods=["GET"])
+@jwt_required()
+def get_cats():
+    current_user_id = get_jwt_identity()
+    session = g.db_session
+    
+    cats = session.query(CatInfo).filter_by(owner_id=current_user_id).all()
+    
+    cats_data = []
+    for cat in cats:
+        cats_data.append({
+            "id": str(cat.id),
+            "name": cat.name,
+            "breed": cat.breed,
+            "age": cat.age
+        })
+    
+    return jsonify(cats_data), 200
+
+
+@app.route("/litterboxes", methods=["GET"])
+@jwt_required()
+def get_litterboxes():
+    current_user_id = get_jwt_identity()
+    session = g.db_session
+    
+    # Get litterboxes for cats owned by the current user
+    litterboxes = session.query(LitterboxInfo).join(CatInfo).filter(
+        CatInfo.owner_id == current_user_id
+    ).all()
+    
+    litterboxes_data = []
+    for litterbox in litterboxes:
+        litterboxes_data.append({
+            "id": str(litterbox.id),
+            "cat_id": str(litterbox.cat_id),
+            "name": litterbox.name
+        })
+    
+    return jsonify(litterboxes_data), 200
+
+@app.route("/edge_devices", methods=["GET"])
+@jwt_required()
+def get_edge_devices():
+    current_user_id = get_jwt_identity()
+    session = g.db_session
+    
+    # Get edge devices for litterboxes owned by the current user
+    edge_devices = session.query(LitterboxEdgeDeviceInfo).join(
+        LitterboxInfo
+    ).join(CatInfo).filter(
+        CatInfo.owner_id == current_user_id
+    ).all()
+    
+    devices_data = []
+    for device in edge_devices:
+        devices_data.append({
+            "id": str(device.id),
+            "litterbox_id": str(device.litterbox_id),
+            "device_name": device.device_name,
+            "device_type": device.device_type
+        })
+    
+    return jsonify(devices_data), 200
 
 # @app.route('/profile', methods=['GET'])
 # @jwt_required()
