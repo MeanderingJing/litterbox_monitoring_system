@@ -1,10 +1,31 @@
+'use client'
+import { useAuth } from './contexts/AuthContext'
+import AuthForm from './components/AuthForm'
+import Dashboard from './components/Dashboard'
+
 export default function Home() {
-  return (
-    <main>
-      <h1>Welcome to Litterbox Frontend</h1>
-    </main>
-  );
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
+
+  // When React sees <AuthForm />, it Calls the AuthForm function
+  return user ? <Dashboard /> : <AuthForm />
 }
+
+// export default function Home() {
+//   return (
+//     <div className="bg-red-500 min-h-screen p-8">
+//       <h1 className="text-white text-4xl">TEST - Should be red background</h1>
+//     </div>
+//   )
+// }
+
 
 
 // import Image from "next/image";

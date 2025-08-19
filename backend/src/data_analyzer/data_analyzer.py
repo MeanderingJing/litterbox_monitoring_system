@@ -76,5 +76,5 @@ def analyze_litterbox_usage_data(db_gateway: PostgreSQLGateway) -> Dict[str, Any
 
 db_gateway = PostgreSQLGateway(
     DATABASE_URL
-)  # Replace with actual gateway implementatio
+)  # Replace with actual gateway implementation
 print(analyze_litterbox_usage_data(db_gateway))

@@ -13,6 +13,7 @@ from rabbitmq_support.rabbitmq_gateway import (
     CONNECTION_PARAMS,
     EXCHANGE_NAME,
     EXCHANGE_TYPE,
+    get_rabbitmq_connection,
 )
 from config.logging import get_logger
 
@@ -23,6 +24,7 @@ get_logger("pika").setLevel(logging.WARNING)
 
 # Pre-defined edge device ID
 EDGE_DEVICE_ID = uuid.UUID("12345678-1234-5678-9012-123456789abc")
+
 EMPTY_LITTERBOX_WEIGHT = 5  # lbs
 
 
@@ -241,7 +243,7 @@ class LitterboxSimulator:
         # Sending to a message queue
         try:
             # Test connection first
-            with self.get_rabbitmq_connection() as channel:
+            with get_rabbitmq_connection() as channel:
                 logger.info("Successfully connected to RabbitMQ")
 
                 # Process each record

@@ -42,9 +42,11 @@ export default function AuthForm() {
     }
   }
 
+  // Handle input changes 
+  // e is a developer defined variable name, representing the event object
   const handleChange = (e) => {
     setFormData({
-      ...formData,
+      ...formData, // Spread operator to keep existing form data
       [e.target.name]: e.target.value
     })
   }

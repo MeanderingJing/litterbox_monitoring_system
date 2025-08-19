@@ -12,6 +12,7 @@ from config.logging import get_logger
 from rabbitmq_support.rabbitmq_gateway import (
     CONNECTION_PARAMS,
     EXCHANGE_NAME,
+    EXCHANGE_TYPE,
     ROUTING_KEY,
     QUEUE_NAME,
 )
@@ -65,7 +66,7 @@ class LitterboxConsumer:
 
             # Declare exchange (should match producer)
             self.channel.exchange_declare(
-                exchange=EXCHANGE_NAME, exchange_type="topic", durable=True
+                exchange=EXCHANGE_NAME, exchange_type=EXCHANGE_TYPE, durable=True
             )
 
             # Declare queue and bind to exchange
@@ -196,11 +197,25 @@ class LitterboxConsumer:
         """Setup signal handlers for graceful shutdown"""
 
         def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+            signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM"
+            logger.info(f"Received signal {signal_name} ({signum}), initiating graceful shutdown...")
             self.should_stop = True
+            
+            # If we're in a blocking operation, we might need to interrupt it
+            # This helps ensure the main loop checks should_stop sooner
+            if self.channel and not self.channel.is_closed:
+                try:
+                    # Stop consuming to break out of any blocking consume operations
+                    self.channel.stop_consuming()
+                except Exception as e:
+                    logger.warning(f"Error stopping consumer during signal handling: {e}")
+
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
+
+        # Optional: Also handle SIGHUP for configuration reload scenarios
+        signal.signal(signal.SIGHUP, signal_handler)
 
     def start_consuming(self):
         """Start consuming messages"""
