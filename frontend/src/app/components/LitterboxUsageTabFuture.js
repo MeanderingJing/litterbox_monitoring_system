@@ -40,7 +40,7 @@ export default function LitterboxUsageTab({ cats, user }) {
       })
 
       const response = await fetch(
-        `http://localhost:5000/cats/${selectedCat}/litterbox-usage?${params}`,
+        `http://192.168.40.159:8000/cats/${selectedCat}/litterbox-usage?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -67,7 +67,7 @@ export default function LitterboxUsageTab({ cats, user }) {
 //     try {
 //       const daysDiff = Math.ceil((new Date(dateRange.endDate) - new Date(dateRange.startDate)) / (1000 * 60 * 60 * 24))
 //       const response = await fetch(
-//         `http://localhost:5000/cats/${selectedCat}/litterbox-usage/stats?days=${daysDiff}`,
+//         `http://192.168.40.159:8000/cats/${selectedCat}/litterbox-usage/stats?days=${daysDiff}`,
 //         {
 //           headers: {
 //             'Authorization': `Bearer ${user.token}`

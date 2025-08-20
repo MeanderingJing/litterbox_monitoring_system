@@ -18,7 +18,7 @@ export default function LitterboxesTab({ cats, litterboxes, setLitterboxes, onDa
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/litterboxes', {
+      const response = await fetch('http://192.168.40.159:8000/litterboxes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

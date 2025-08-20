@@ -29,7 +29,7 @@ export default function EdgeDevicesTab({ litterboxes, edgeDevices, setEdgeDevice
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/edge_devices', {
+      const response = await fetch('http://192.168.40.159:8000/edge_devices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

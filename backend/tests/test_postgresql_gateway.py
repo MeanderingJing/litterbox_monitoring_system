@@ -17,7 +17,7 @@ def db_url():
     """Test database URL."""
     db_url = os.getenv(
         "DATABASE_URL",
-        "postgresql://test_user:test_password@localhost:5432/test_litterbox_db",
+        "postgresql://test_user:test_password@192.168.40.159:5432/test_litterbox_db",
     )
     return db_url
 
@@ -355,7 +355,7 @@ class TestPostgreSQLGatewayInit:
 #     @pytest.fixture
 #     def test_db_url(self):
 #         """Test database URL for integration tests."""
-#         return "postgresql://test_user:test_password@localhost:5432/test_litterbox_db"
+#         return "postgresql://test_user:test_password@192.168.40.159:5432/test_litterbox_db"
 
 #     @pytest.fixture
 #     def integration_gateway(self, test_db_url):

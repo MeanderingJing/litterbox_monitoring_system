@@ -19,7 +19,7 @@ from models.models import LitterboxUsageData, UserInfo, CatInfo, LitterboxInfo, 
 # Database Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://example_user:example_password@localhost:5435/example_db",
+    "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
 )
 db_gateway = PostgreSQLGateway(DATABASE_URL)
 
@@ -569,4 +569,4 @@ def get_all_my_cats_litterbox_usage():
 #     with app.app_context():
 #         db.create_all()
 #     app.run(debug=True)
-app.run(debug=True, host='0.0.0.0')
+app.run(debug=True, host='0.0.0.0', port=8000)

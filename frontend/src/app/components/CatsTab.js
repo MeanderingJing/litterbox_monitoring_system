@@ -19,7 +19,7 @@ export default function CatsTab({ cats, setCats, onDataChange }) {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/cats', {
+      const response = await fetch('http://192.168.40.159:8000/cats', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -9,7 +9,7 @@ from config.logging import get_logger
 from database.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
-DATABASE_URL = "postgresql://example_user:example_password@localhost:5435/example_db"
+DATABASE_URL = "postgresql://example_user:example_password@192.168.40.159:5435/example_db"
 
 
 def analyze_litterbox_usage_data(db_gateway: PostgreSQLGateway) -> Dict[str, Any]:

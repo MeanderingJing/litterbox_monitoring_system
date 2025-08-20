@@ -45,7 +45,7 @@ export default function Dashboard() {
 
   const fetchCats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/cats', {
+      const response = await fetch('http://192.168.40.159:8000/cats', {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
@@ -61,7 +61,7 @@ export default function Dashboard() {
 
   const fetchLitterboxes = async () => {
     try {
-      const response = await fetch('http://localhost:5000/litterboxes', {
+      const response = await fetch('http://192.168.40.159:8000/litterboxes', {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
@@ -77,7 +77,7 @@ export default function Dashboard() {
 
   const fetchEdgeDevices = async () => {
     try {
-      const response = await fetch('http://localhost:5000/edge_devices', {
+      const response = await fetch('http://192.168.40.159:8000/edge_devices', {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }

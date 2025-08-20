@@ -55,7 +55,7 @@ export default function LitterboxUsageTab({ cats, user }) {
         limit: '1000' // Get plenty of data for client-side pagination
       })
 
-      const url = `http://localhost:5000/cats/${selectedCat}/litterbox-usage?${params}`
+      const url = `http://192.168.40.159:8000/cats/${selectedCat}/litterbox-usage?${params}`
       console.log('API URL:', url)
 
       const response = await fetch(url, {

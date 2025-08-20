@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch('http://localhost:5000/login', {
+      const response = await fetch('http://192.168.40.159:8000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
 
   const register = async (username, email, password) => {
     try {
-      const response = await fetch('http://localhost:5000/register', {
+      const response = await fetch('http://192.168.40.159:8000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
