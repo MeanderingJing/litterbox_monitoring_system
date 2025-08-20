@@ -11,7 +11,7 @@ services:
       - ./docker-data/.pg-data:/var/lib/postgresql/data
     ports:
       - "5435:5432"
-  
+
   rabbitmq:
     image: rabbitmq:3.12-management
     container_name: litterbox-rabbitmq-server
@@ -28,6 +28,24 @@ services:
       RABBITMQ_DEFAULT_PASS: password
     volumes:
       - ./.docker-data/.rabbitmq-data:/var/lib/rabbitmq
+
+  data_source_simulator:
+    build:
+      context: ./backend
+      dockerfile: src/data_source_simulator/Dockerfile
+    container_name: litterbox_data_source_simulator
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASSWORD: password
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend/src/data_source_simulator:/app/data_source_simulator
+    command: ["python", "litterbox_edge_device_simulator.py"]
 
 
 
