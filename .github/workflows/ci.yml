@@ -24,7 +24,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,6 +58,7 @@ jobs:
       #     poetry run mypy .
       - name: Run tests
         run: |
+          cd backend
           poetry run pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing
         env:
           DATABASE_URL: postgresql://test_user:test)password@localhost:5432/test_litterbox_db
@@ -97,4 +98,4 @@ jobs:
   #         safety check --json --output safety-results.json || true
 
 
-        
+

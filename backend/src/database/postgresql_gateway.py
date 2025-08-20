@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from config.logging import get_logger
 from models.models import Base, LitterboxUsageData
