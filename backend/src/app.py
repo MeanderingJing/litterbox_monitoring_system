@@ -14,7 +14,13 @@ from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 
 from database.postgresql_gateway import PostgreSQLGateway
-from models.models import LitterboxUsageData, UserInfo, CatInfo, LitterboxInfo, LitterboxEdgeDeviceInfo
+from models.models import (
+    LitterboxUsageData,
+    UserInfo,
+    CatInfo,
+    LitterboxInfo,
+    LitterboxEdgeDeviceInfo,
+)
 
 # Database Configuration
 DATABASE_URL = os.getenv(
@@ -111,6 +117,7 @@ def login():
         200,
     )
 
+
 @app.route("/cats", methods=["POST"])
 @jwt_required()
 def create_cat():
@@ -165,55 +172,56 @@ def create_litterbox():
         }
     )
 
-@app.route('/edge_devices', methods=['POST'])
+
+@app.route("/edge_devices", methods=["POST"])
 @jwt_required()
 def register_edge_devices():
     current_user_id = get_jwt_identity()
     data = request.get_json()
     session = g.db_session
 
-    litterbox = session.query(LitterboxInfo).get(data['litterbox_id'])
+    litterbox = session.query(LitterboxInfo).get(data["litterbox_id"])
     if not litterbox:
-        return jsonify({'error': 'Litterbox not found.'}), 404
-    
+        return jsonify({"error": "Litterbox not found."}), 404
+
     cat = session.query(CatInfo).get(litterbox.cat_id)
     if not cat or str(cat.owner_id) != current_user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
+        return jsonify({"error": "Unauthorized"}), 403
+
     edge_device = LitterboxEdgeDeviceInfo(
-        id = data['id'],
-        litterbox_id = data['litterbox_id'],
-        device_name = data['device_name'],
-        device_type = data['device_type']
-        )
+        id=data["id"],
+        litterbox_id=data["litterbox_id"],
+        device_name=data["device_name"],
+        device_type=data["device_type"],
+    )
     session.add(edge_device)
     session.commit()
 
-    return jsonify({
-        'msg': 'Added an edge device!',
-        'id': str(edge_device.id),
-        'litterbox_id': data['litterbox_id'],
-        'device_name': data['device_name'],
-        'device_type': data['device_type']
-    })
+    return jsonify(
+        {
+            "msg": "Added an edge device!",
+            "id": str(edge_device.id),
+            "litterbox_id": data["litterbox_id"],
+            "device_name": data["device_name"],
+            "device_type": data["device_type"],
+        }
+    )
+
 
 @app.route("/cats", methods=["GET"])
 @jwt_required()
 def get_cats():
     current_user_id = get_jwt_identity()
     session = g.db_session
-    
+
     cats = session.query(CatInfo).filter_by(owner_id=current_user_id).all()
-    
+
     cats_data = []
     for cat in cats:
-        cats_data.append({
-            "id": str(cat.id),
-            "name": cat.name,
-            "breed": cat.breed,
-            "age": cat.age
-        })
-    
+        cats_data.append(
+            {"id": str(cat.id), "name": cat.name, "breed": cat.breed, "age": cat.age}
+        )
+
     return jsonify(cats_data), 200
 
 
@@ -222,45 +230,56 @@ def get_cats():
 def get_litterboxes():
     current_user_id = get_jwt_identity()
     session = g.db_session
-    
+
     # Get litterboxes for cats owned by the current user
-    litterboxes = session.query(LitterboxInfo).join(CatInfo).filter(
-        CatInfo.owner_id == current_user_id
-    ).all()
-    
+    litterboxes = (
+        session.query(LitterboxInfo)
+        .join(CatInfo)
+        .filter(CatInfo.owner_id == current_user_id)
+        .all()
+    )
+
     litterboxes_data = []
     for litterbox in litterboxes:
-        litterboxes_data.append({
-            "id": str(litterbox.id),
-            "cat_id": str(litterbox.cat_id),
-            "name": litterbox.name
-        })
-    
+        litterboxes_data.append(
+            {
+                "id": str(litterbox.id),
+                "cat_id": str(litterbox.cat_id),
+                "name": litterbox.name,
+            }
+        )
+
     return jsonify(litterboxes_data), 200
+
 
 @app.route("/edge_devices", methods=["GET"])
 @jwt_required()
 def get_edge_devices():
     current_user_id = get_jwt_identity()
     session = g.db_session
-    
+
     # Get edge devices for litterboxes owned by the current user
-    edge_devices = session.query(LitterboxEdgeDeviceInfo).join(
-        LitterboxInfo
-    ).join(CatInfo).filter(
-        CatInfo.owner_id == current_user_id
-    ).all()
-    
+    edge_devices = (
+        session.query(LitterboxEdgeDeviceInfo)
+        .join(LitterboxInfo)
+        .join(CatInfo)
+        .filter(CatInfo.owner_id == current_user_id)
+        .all()
+    )
+
     devices_data = []
     for device in edge_devices:
-        devices_data.append({
-            "id": str(device.id),
-            "litterbox_id": str(device.litterbox_id),
-            "device_name": device.device_name,
-            "device_type": device.device_type
-        })
-    
+        devices_data.append(
+            {
+                "id": str(device.id),
+                "litterbox_id": str(device.litterbox_id),
+                "device_name": device.device_name,
+                "device_type": device.device_type,
+            }
+        )
+
     return jsonify(devices_data), 200
+
 
 @app.route("/cats/<cat_id>/litterbox-usage", methods=["GET"])
 @jwt_required()
@@ -268,108 +287,134 @@ def get_cat_litterbox_usage(cat_id):
     """
     Retrieve litterbox usage data for a specific cat.
     Only returns data for cats owned by the authenticated user.
-    
+
     Query parameters:
     - start_date: ISO format datetime string (optional)
-    - end_date: ISO format datetime string (optional) 
+    - end_date: ISO format datetime string (optional)
     - limit: number of records to return (default: 100, max: 1000)
     - offset: offset for pagination (default: 0)
     """
     current_user_id = get_jwt_identity()
     session = g.db_session
-    
+
     # Get query parameters
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-    limit = min(int(request.args.get('limit', 100)), 1000)
-    offset = max(int(request.args.get('offset', 0)), 0)
-    
+    start_date_str = request.args.get("start_date")
+    end_date_str = request.args.get("end_date")
+    limit = min(int(request.args.get("limit", 100)), 1000)
+    offset = max(int(request.args.get("offset", 0)), 0)
+
     # Parse dates if provided
     start_date = None
     end_date = None
     try:
         if start_date_str:
-            start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+            start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
         if end_date_str:
-            end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+            end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
     except ValueError:
-        return jsonify({"error": "Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"}), 400
-    
+        return (
+            jsonify(
+                {"error": "Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"}
+            ),
+            400,
+        )
+
     try:
         cat_uuid = uuid.UUID(cat_id)
     except ValueError:
         return jsonify({"error": "Invalid cat ID format"}), 400
-    
+
     # First, verify the cat belongs to the current user
-    cat = session.query(CatInfo).filter(
-        and_(
-            CatInfo.id == cat_uuid,
-            CatInfo.owner_id == uuid.UUID(current_user_id)
+    cat = (
+        session.query(CatInfo)
+        .filter(
+            and_(CatInfo.id == cat_uuid, CatInfo.owner_id == uuid.UUID(current_user_id))
         )
-    ).first()
-    
+        .first()
+    )
+
     if not cat:
-        return jsonify({"error": "Cat not found or you don't have permission to access this cat's data"}), 404
-    
+        return (
+            jsonify(
+                {
+                    "error": "Cat not found or you don't have permission to access this cat's data"
+                }
+            ),
+            404,
+        )
+
     # Build the query to get usage data
-    # .options(joinedload(...)): 
-    # “When you query LitterboxUsageData, go ahead and eagerly load the related LitterboxEdgeDeviceInfo 
+    # .options(joinedload(...)):
+    # “When you query LitterboxUsageData, go ahead and eagerly load the related LitterboxEdgeDeviceInfo
     # and its LitterboxInfo in the same SQL query (using JOIN).”
     query = (
         session.query(LitterboxUsageData)
-        .join(LitterboxEdgeDeviceInfo, LitterboxUsageData.litterbox_edge_device_id == LitterboxEdgeDeviceInfo.id)
+        .join(
+            LitterboxEdgeDeviceInfo,
+            LitterboxUsageData.litterbox_edge_device_id == LitterboxEdgeDeviceInfo.id,
+        )
         .join(LitterboxInfo, LitterboxEdgeDeviceInfo.litterbox_id == LitterboxInfo.id)
         .join(CatInfo, LitterboxInfo.cat_id == CatInfo.id)
         .filter(CatInfo.id == cat_uuid)
         .options(
-            joinedload(LitterboxUsageData.litterbox_edge_device)
-            .joinedload(LitterboxEdgeDeviceInfo.litterbox)
+            joinedload(LitterboxUsageData.litterbox_edge_device).joinedload(
+                LitterboxEdgeDeviceInfo.litterbox
+            )
         )
     )
-    
+
     # Apply date filters if provided
     if start_date:
         query = query.filter(LitterboxUsageData.enter_time >= start_date)
     if end_date:
         query = query.filter(LitterboxUsageData.enter_time <= end_date)
-    
+
     # Order by most recent first
     query = query.order_by(LitterboxUsageData.enter_time.desc())
-    
+
     # Get total count for pagination info
     total_count = query.count()
-    
+
     # Apply pagination
     usage_data = query.offset(offset).limit(limit).all()
-    
+
     # Transform the data
     usage_responses = []
     for usage in usage_data:
-        duration = (usage.exit_time - usage.enter_time).total_seconds() / 60  # in minutes
+        duration = (
+            usage.exit_time - usage.enter_time
+        ).total_seconds() / 60  # in minutes
         weight_diff = usage.weight_enter - usage.weight_exit
-        
-        usage_responses.append({
-            "id": str(usage.id),
-            "enter_time": usage.enter_time.isoformat(),
-            "exit_time": usage.exit_time.isoformat(),
-            "weight_enter": usage.weight_enter,
-            "weight_exit": usage.weight_exit,
-            "duration_minutes": round(duration, 2),
-            "cat_weight": round(weight_diff, 2),
-            "created_at": usage.created_at.isoformat(),
-            "device_name": usage.litterbox_edge_device.device_name,
-            "litterbox_name": usage.litterbox_edge_device.litterbox.name
-        })
-    
-    return jsonify({
-        "cat_id": str(cat.id),
-        "cat_name": cat.name,
-        "total_usage_count": total_count,
-        "returned_count": len(usage_responses),
-        "offset": offset,
-        "limit": limit,
-        "usage_data": usage_responses
-    }), 200
+
+        usage_responses.append(
+            {
+                "id": str(usage.id),
+                "enter_time": usage.enter_time.isoformat(),
+                "exit_time": usage.exit_time.isoformat(),
+                "weight_enter": usage.weight_enter,
+                "weight_exit": usage.weight_exit,
+                "duration_minutes": round(duration, 2),
+                "cat_weight": round(weight_diff, 2),
+                "created_at": usage.created_at.isoformat(),
+                "device_name": usage.litterbox_edge_device.device_name,
+                "litterbox_name": usage.litterbox_edge_device.litterbox.name,
+            }
+        )
+
+    return (
+        jsonify(
+            {
+                "cat_id": str(cat.id),
+                "cat_name": cat.name,
+                "total_usage_count": total_count,
+                "returned_count": len(usage_responses),
+                "offset": offset,
+                "limit": limit,
+                "usage_data": usage_responses,
+            }
+        ),
+        200,
+    )
 
 
 @app.route("/my-cats/litterbox-usage", methods=["GET"])
@@ -377,7 +422,7 @@ def get_cat_litterbox_usage(cat_id):
 def get_all_my_cats_litterbox_usage():
     """
     Retrieve litterbox usage data for all cats owned by the authenticated user.
-    
+
     Query parameters:
     - start_date: ISO format datetime string (optional)
     - end_date: ISO format datetime string (optional)
@@ -385,82 +430,103 @@ def get_all_my_cats_litterbox_usage():
     """
     current_user_id = get_jwt_identity()
     session = g.db_session
-    
+
     # Get query parameters
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-    limit_per_cat = min(int(request.args.get('limit_per_cat', 50)), 500)
-    
+    start_date_str = request.args.get("start_date")
+    end_date_str = request.args.get("end_date")
+    limit_per_cat = min(int(request.args.get("limit_per_cat", 50)), 500)
+
     # Parse dates if provided
     start_date = None
     end_date = None
     try:
         if start_date_str:
-            start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+            start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
         if end_date_str:
-            end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+            end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
     except ValueError:
-        return jsonify({"error": "Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"}), 400
-    
+        return (
+            jsonify(
+                {"error": "Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"}
+            ),
+            400,
+        )
+
     # Get all cats owned by the user
-    cats = session.query(CatInfo).filter(CatInfo.owner_id == uuid.UUID(current_user_id)).all()
-    
+    cats = (
+        session.query(CatInfo)
+        .filter(CatInfo.owner_id == uuid.UUID(current_user_id))
+        .all()
+    )
+
     if not cats:
         return jsonify({"error": "No cats found for this user"}), 404
-    
+
     result = []
-    
+
     for cat in cats:
         # Get usage data for each cat
         query = (
             session.query(LitterboxUsageData)
-            .join(LitterboxEdgeDeviceInfo, LitterboxUsageData.litterbox_edge_device_id == LitterboxEdgeDeviceInfo.id)
-            .join(LitterboxInfo, LitterboxEdgeDeviceInfo.litterbox_id == LitterboxInfo.id)
+            .join(
+                LitterboxEdgeDeviceInfo,
+                LitterboxUsageData.litterbox_edge_device_id
+                == LitterboxEdgeDeviceInfo.id,
+            )
+            .join(
+                LitterboxInfo, LitterboxEdgeDeviceInfo.litterbox_id == LitterboxInfo.id
+            )
             .filter(LitterboxInfo.cat_id == cat.id)
             .options(
-                joinedload(LitterboxUsageData.litterbox_edge_device)
-                .joinedload(LitterboxEdgeDeviceInfo.litterbox)
+                joinedload(LitterboxUsageData.litterbox_edge_device).joinedload(
+                    LitterboxEdgeDeviceInfo.litterbox
+                )
             )
         )
-        
+
         if start_date:
             query = query.filter(LitterboxUsageData.enter_time >= start_date)
         if end_date:
             query = query.filter(LitterboxUsageData.enter_time <= end_date)
-        
+
         total_count = query.count()
-        usage_data = query.order_by(LitterboxUsageData.enter_time.desc()).limit(limit_per_cat).all()
-        
+        usage_data = (
+            query.order_by(LitterboxUsageData.enter_time.desc())
+            .limit(limit_per_cat)
+            .all()
+        )
+
         usage_responses = []
         for usage in usage_data:
             duration = (usage.exit_time - usage.enter_time).total_seconds() / 60
             weight_diff = usage.weight_exit - usage.weight_enter
-            
-            usage_responses.append({
-                "id": str(usage.id),
-                "enter_time": usage.enter_time.isoformat(),
-                "exit_time": usage.exit_time.isoformat(),
-                "weight_enter": usage.weight_enter,
-                "weight_exit": usage.weight_exit,
-                "duration_minutes": round(duration, 2),
-                "weight_difference": round(weight_diff, 2),
-                "created_at": usage.created_at.isoformat(),
-                "device_name": usage.litterbox_edge_device.device_name,
-                "litterbox_name": usage.litterbox_edge_device.litterbox.name
-            })
-        
-        result.append({
-            "cat_id": str(cat.id),
-            "cat_name": cat.name,
-            "total_usage_count": total_count,
-            "returned_count": len(usage_responses),
-            "usage_data": usage_responses
-        })
-    
-    return jsonify({
-        "cats": result,
-        "total_cats": len(cats)
-    }), 200
+
+            usage_responses.append(
+                {
+                    "id": str(usage.id),
+                    "enter_time": usage.enter_time.isoformat(),
+                    "exit_time": usage.exit_time.isoformat(),
+                    "weight_enter": usage.weight_enter,
+                    "weight_exit": usage.weight_exit,
+                    "duration_minutes": round(duration, 2),
+                    "weight_difference": round(weight_diff, 2),
+                    "created_at": usage.created_at.isoformat(),
+                    "device_name": usage.litterbox_edge_device.device_name,
+                    "litterbox_name": usage.litterbox_edge_device.litterbox.name,
+                }
+            )
+
+        result.append(
+            {
+                "cat_id": str(cat.id),
+                "cat_name": cat.name,
+                "total_usage_count": total_count,
+                "returned_count": len(usage_responses),
+                "usage_data": usage_responses,
+            }
+        )
+
+    return jsonify({"cats": result, "total_cats": len(cats)}), 200
 
 
 # @app.route("/cats/<cat_id>/litterbox-usage/stats", methods=["GET"])
@@ -468,34 +534,34 @@ def get_all_my_cats_litterbox_usage():
 # def get_cat_litterbox_usage_stats(cat_id):
 #     """
 #     Get usage statistics for a cat over a specified period.
-    
+
 #     Query parameters:
 #     - days: number of days to calculate stats for (default: 7, max: 365)
 #     """
 #     current_user_id = get_jwt_identity()
 #     session = g.db_session
-    
+
 #     # Get query parameters
 #     days = min(int(request.args.get('days', 7)), 365)
-    
+
 #     try:
 #         cat_uuid = uuid.UUID(cat_id)
 #     except ValueError:
 #         return jsonify({"error": "Invalid cat ID format"}), 400
-    
+
 #     # Verify cat ownership
 #     cat = session.query(CatInfo).filter(
 #         and_(
-#             CatInfo.id == cat_uuid, 
+#             CatInfo.id == cat_uuid,
 #             CatInfo.owner_id == uuid.UUID(current_user_id)
 #         )
 #     ).first()
-    
+
 #     if not cat:
 #         return jsonify({"error": "Cat not found or you don't have permission to access this cat's data"}), 404
-    
+
 #     start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    
+
 #     # Get usage statistics
 #     stats = (
 #         session.query(
@@ -517,7 +583,7 @@ def get_all_my_cats_litterbox_usage():
 #         )
 #         .first()
 #     )
-    
+
 #     # Calculate daily usage pattern (visits per hour of day)
 #     hourly_pattern = (
 #         session.query(
@@ -535,7 +601,7 @@ def get_all_my_cats_litterbox_usage():
 #         .group_by(func.extract('hour', LitterboxUsageData.enter_time))
 #         .all()
 #     )
-    
+
 #     return jsonify({
 #         "cat_id": str(cat_uuid),
 #         "cat_name": cat.name,
@@ -569,4 +635,4 @@ def get_all_my_cats_litterbox_usage():
 #     with app.app_context():
 #         db.create_all()
 #     app.run(debug=True)
-app.run(debug=True, host='0.0.0.0', port=8000)
+app.run(debug=True, host="0.0.0.0", port=8000)

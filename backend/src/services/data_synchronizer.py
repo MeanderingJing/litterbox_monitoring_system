@@ -10,7 +10,9 @@ from data_persister.db_writer import get_litterbox_usage_data
 from database.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
-DATABASE_URL = "postgresql://example_user:example_password@192.168.40.159:5435/example_db"
+DATABASE_URL = (
+    "postgresql://example_user:example_password@192.168.40.159:5435/example_db"
+)
 
 
 class DataSynchronizer:

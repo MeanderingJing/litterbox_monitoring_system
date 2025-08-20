@@ -198,9 +198,11 @@ class LitterboxConsumer:
 
         def signal_handler(signum, frame):
             signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM"
-            logger.info(f"Received signal {signal_name} ({signum}), initiating graceful shutdown...")
+            logger.info(
+                f"Received signal {signal_name} ({signum}), initiating graceful shutdown..."
+            )
             self.should_stop = True
-            
+
             # If we're in a blocking operation, we might need to interrupt it
             # This helps ensure the main loop checks should_stop sooner
             if self.channel and not self.channel.is_closed:
@@ -208,8 +210,9 @@ class LitterboxConsumer:
                     # Stop consuming to break out of any blocking consume operations
                     self.channel.stop_consuming()
                 except Exception as e:
-                    logger.warning(f"Error stopping consumer during signal handling: {e}")
-
+                    logger.warning(
+                        f"Error stopping consumer during signal handling: {e}"
+                    )
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
