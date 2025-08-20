@@ -39,6 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry config virtualenvs.create false
+          cd backend
           poetry install --no-interaction --no-root
       - name: Wait for services to be ready
         run: |
