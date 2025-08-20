@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "litterbox-data-collector"
+name = "litterbox-monitoring-system-backend"
 version = "0.1.0"
 description = "A Python package retrieving litterbox usage data and storing in a database."
 authors = ["Jing Li"]
