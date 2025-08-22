@@ -6,8 +6,8 @@ It fetches data from the Litterbox API and synchronizes it with the database.
 from typing import Any, Dict, List, Optional
 
 from config.logging import get_logger
-from data_persister.db_writer import get_litterbox_usage_data
-from database.postgresql_gateway import PostgreSQLGateway
+from backend.src.data_persister.data_persister import get_litterbox_usage_data
+from database_support.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
 DATABASE_URL = (

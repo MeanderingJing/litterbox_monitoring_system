@@ -16,7 +16,7 @@ from rabbitmq_support.rabbitmq_gateway import (
     ROUTING_KEY,
     QUEUE_NAME,
 )
-from database.postgresql_gateway import PostgreSQLGateway
+from database_support.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
 
