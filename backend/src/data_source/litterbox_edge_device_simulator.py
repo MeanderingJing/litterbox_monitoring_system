@@ -233,7 +233,8 @@ class LitterboxSimulator:
 
     def process_data(self, data: List[Dict]):
         """
-        Process the generated data by sending each record to RabbitMQ
+        Process the generated data by sending each record to RabbitMQ. If RabbitMQ is unavailable,
+        fall back to saving the data to a local file.
         """
         logger.info(f"Processing {len(data)} usage records...")
 
@@ -290,7 +291,7 @@ class LitterboxSimulator:
             self.save_data_to_file(data)
 
     def generate_initial_week(self):
-        """Generate initial week's worth of data"""
+        """Generate initial week's worth of data and send to RabbitMQ."""
         logger.info("Generating initial week's data...")
         data = self.generate_week_data(self.current_week_start)
         self.process_data(data)
