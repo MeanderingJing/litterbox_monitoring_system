@@ -310,7 +310,7 @@ class LitterboxSimulator:
             self.generate_next_week()
 
     def generate_next_week(self):
-        """Generate next week's data (scheduled task)"""
+        """Generate next week's data (scheduled task) and send to RabbitMQ."""
         logger.info("Generating next week's data...")
         # Move to the next 7-day period
         self.current_week_start += timedelta(days=7)
