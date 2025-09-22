@@ -1,3 +1,13 @@
+"""
+A data generator that simulates IoT sensor data from smart litterboxes for cats.
+This simulator produces authentic usage patterns and sensor readings for development,
+testing, and demonstration purposes.
+
+Data Distribution:
+- Publishes sensor data to RabbitMQ message queue in real-time
+- Automatic fallback to local JSON file storage if RabbitMQ unavailable
+"""
+
 import uuid
 import random
 import schedule
