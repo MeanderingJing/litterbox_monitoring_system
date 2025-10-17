@@ -28,8 +28,8 @@ npm run dev
 
 For production, deploy to Vercel or a cloud provider.
 
-![Sign in Page]()
-![Litter Box Usage Visualization]()
+![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/Litterlog_sign_in.png)
+![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/litterbox_usage_data_visualization.png)
 
 
 
