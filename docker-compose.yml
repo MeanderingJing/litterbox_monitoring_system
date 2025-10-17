@@ -23,29 +23,63 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
     volumes:
       - ./.docker-data/.rabbitmq-data:/var/lib/rabbitmq
 
-  data_source_simulator:
+  litterbox_simulator:
     build:
       context: ./backend
-      dockerfile: src/data_source_simulator/Dockerfile
+      dockerfile: src/data_source/Dockerfile
     container_name: litterbox_data_source_simulator
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: user
       RABBITMQ_PASSWORD: password
-    ports:
-      - "8001:8001"
+
     volumes:
-      - ./backend/src/data_source_simulator:/app/data_source_simulator
-    command: ["python", "litterbox_edge_device_simulator.py"]
+      - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
+    command: ["python", "data_source_simulator/litterbox_edge_device_simulator.py"]
+
+  # TO CHECK
+  data_persister:
+    build:
+      context: ./backend
+      dockerfile: src/data_persister/Dockerfile
+    container_name: litterbox_data_persister
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASSWORD: password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: example_user
+      POSTGRES_PASSWORD: example_password
+      POSTGRES_DB: example_db
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pika; import os; pika.BlockingConnection(pika.URLParameters(os.getenv('RABBITMQ_URL'))).close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s  # Give time for dependencies to start
+    volumes:
+      - ./.docker-data/.litterbox_data:/app/litterbox_data
+
+
 
 
 
