@@ -6,7 +6,7 @@ The end-to-end solution combines edge computing (implemented as a litterbox simu
 This is an on-going project that is constantly being improved.
 
 # System Diagram
-![System Diagram](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/LitterLog-high-level-diagram.png)
+![System Diagram]([https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/LitterLog-high-level-diagram.png](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/LitterLog-high-level-diagram.png))
 
 # Spin up the backend using Docker compose
 `sudo docker compose up`
