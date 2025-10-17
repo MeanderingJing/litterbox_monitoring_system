@@ -11,6 +11,14 @@ services:
       - ./docker-data/.pg-data:/var/lib/postgresql/data
     ports:
       - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U example_user -d example_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - litterbox-network
 
   rabbitmq:
     image: rabbitmq:3.12-management
@@ -29,6 +37,8 @@ services:
       RABBITMQ_DEFAULT_PASS: password
     volumes:
       - ./.docker-data/.rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - litterbox-network
 
   litterbox_simulator:
     build:
@@ -38,6 +48,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -46,7 +57,10 @@ services:
 
     volumes:
       - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
-    command: ["python", "data_source_simulator/litterbox_edge_device_simulator.py"]
+    command: ["python", "data_source/litterbox_edge_device_simulator.py"]
+    restart: unless-stopped
+    networks:
+      - litterbox-network
 
   # TO CHECK
   data_persister:
@@ -69,6 +83,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      litterbox_simulator:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import pika; import os; pika.BlockingConnection(pika.URLParameters(os.getenv('RABBITMQ_URL'))).close()"]
@@ -78,6 +94,20 @@ services:
       start_period: 40s  # Give time for dependencies to start
     volumes:
       - ./.docker-data/.litterbox_data:/app/litterbox_data
+
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for simulator to produce initial data..."
+        sleep 10
+        python data_persister/data_persister.py
+    networks:
+      - litterbox-network
+
+networks:
+  litterbox-network:
+    driver: bridge
 
 
 
