@@ -30,7 +30,7 @@ For production, deploy to Vercel or a cloud provider.
 ## Litterlog Sign in Page
 ![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/Litterlog_sign_in.png)
 ## Litter Box Usage Visualization
-![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/litterbox_usage_data_visualization.png)
+![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/litterbox_usage_data_visualization.png)
 
 
 
