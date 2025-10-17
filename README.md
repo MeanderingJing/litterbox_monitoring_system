@@ -28,5 +28,8 @@ npm run dev
 
 For production, deploy to Vercel or a cloud provider.
 
+![Sign in Page]()
+![Litter Box Usage Visualization]()
+
 
 
