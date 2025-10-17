@@ -28,7 +28,7 @@ For production, use gunicorn and nginx (my own production server), a third-party
 
 For production, deploy to Vercel or a cloud provider.
 ## Litterlog Sign in Page
-![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/Litterlog_sign_in.png)
+![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/Litterlog_sign_in.png)
 ## Litter Box Usage Visualization
 ![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/litterbox_usage_data_visualization.png)
 
