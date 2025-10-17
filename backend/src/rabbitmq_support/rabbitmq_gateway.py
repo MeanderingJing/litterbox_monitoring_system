@@ -8,7 +8,9 @@ logger = get_logger(__name__)
 
 # RabbitMQ Configuration
 # RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "192.168.40.159")
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq") # Updated for Docker Compose setup
+RABBITMQ_HOST = os.getenv(
+    "RABBITMQ_HOST", "rabbitmq"
+)  # Updated for Docker Compose setup
 
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "user")
