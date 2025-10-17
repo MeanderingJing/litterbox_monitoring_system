@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from database.postgresql_gateway import PostgreSQLGateway
+from database_support.postgresql_gateway import PostgreSQLGateway
 from models.models import LitterboxUsageData
 
 

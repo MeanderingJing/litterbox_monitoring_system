@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch, mock_open
 
 
 # Import the module under test
-from data_source_simulator.litterbox_edge_device_simulator import (
+from data_source.litterbox_edge_device_simulator import (
     LitterboxSimulator,
     EDGE_DEVICE_ID,
     EMPTY_LITTERBOX_WEIGHT,
