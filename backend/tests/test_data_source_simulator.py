@@ -19,7 +19,7 @@ class TestLitterboxSimulator:
     def simulator(self):
         """Create a simulator instance for testing"""
         with patch(
-            "data_source_simulator.litterbox_edge_device_simulator.get_logger"
+            "data_source.litterbox_edge_device_simulator.get_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
             return LitterboxSimulator()
@@ -29,7 +29,7 @@ class TestLitterboxSimulator:
         """Mock datetime.now to return a fixed date"""
         fixed_date = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
         with patch(
-            "data_source_simulator.litterbox_edge_device_simulator.datetime"
+            "data_source.litterbox_edge_device_simulator.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = fixed_date
             mock_dt.side_effect = lambda *args, **kw: datetime(*args, **kw)
@@ -39,7 +39,7 @@ class TestLitterboxSimulator:
     def simulator_with_fixed_date(self, mock_datetime_now):
         """Create a simulator instance with fixed date"""
         with patch(
-            "data_source_simulator.litterbox_edge_device_simulator.get_logger"
+            "data_source.litterbox_edge_device_simulator.get_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
             return LitterboxSimulator()
@@ -171,7 +171,7 @@ class TestLitterboxSimulator:
 
     @patch("builtins.open", new_callable=mock_open)
     @patch("json.dump")
-    @patch("data_source_simulator.litterbox_edge_device_simulator.datetime")
+    @patch("data_source.litterbox_edge_device_simulator.datetime")
     def test_save_data_to_file_without_filename(
         self, mock_datetime, mock_json_dump, mock_file, simulator
     ):
@@ -248,8 +248,8 @@ class TestLitterboxSimulator:
             simulator._check_and_generate_next_batch()
             mock_gen_next.assert_not_called()
 
-    @patch("data_source_simulator.litterbox_edge_device_simulator.schedule")
-    @patch("data_source_simulator.litterbox_edge_device_simulator.time.sleep")
+    @patch("data_source.litterbox_edge_device_simulator.schedule")
+    @patch("data_source.litterbox_edge_device_simulator.time.sleep")
     def test_start_simulator_keyboard_interrupt(
         self, mock_sleep, mock_schedule, simulator
     ):
@@ -262,8 +262,8 @@ class TestLitterboxSimulator:
             mock_init.assert_called_once()
             mock_schedule.every.return_value.day.at.assert_called_once_with("00:01")
 
-    @patch("data_source_simulator.litterbox_edge_device_simulator.schedule")
-    @patch("data_source_simulator.litterbox_edge_device_simulator.time.sleep")
+    @patch("data_source.litterbox_edge_device_simulator.schedule")
+    @patch("data_source.litterbox_edge_device_simulator.time.sleep")
     def test_start_simulator_running(self, mock_sleep, mock_schedule, simulator):
         """Test simulator start and running"""
         # Make sleep raise KeyboardInterrupt after a few iterations
@@ -284,7 +284,7 @@ class TestWeightDataRealism:
     @pytest.fixture
     def simulator(self):
         with patch(
-            "data_source_simulator.litterbox_edge_device_simulator.get_logger"
+            "data_source.litterbox_edge_device_simulator.get_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
             return LitterboxSimulator()
@@ -330,7 +330,7 @@ class TestTimeGeneration:
     @pytest.fixture
     def simulator(self):
         with patch(
-            "data_source_simulator.litterbox_edge_device_simulator.get_logger"
+            "data_source.litterbox_edge_device_simulator.get_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
             return LitterboxSimulator()
@@ -367,10 +367,10 @@ class TestTimeGeneration:
         assert total_uses > 0
 
 
-@patch("data_source_simulator.litterbox_edge_device_simulator.LitterboxSimulator")
+@patch("data_source.litterbox_edge_device_simulator.LitterboxSimulator")
 def test_main_function(mock_simulator_class):
     """Test the main function"""
-    from data_source_simulator.litterbox_edge_device_simulator import main
+    from data_source.litterbox_edge_device_simulator import main
 
     mock_simulator = Mock()
     mock_simulator_class.return_value = mock_simulator
@@ -388,7 +388,7 @@ class TestIntegration:
     @pytest.fixture
     def simulator(self):
         with patch(
-            "data_source_simulator.litterbox_edge_device_simulator.get_logger"
+            "data_source.litterbox_edge_device_simulator.get_logger"
         ) as mock_logger:
             mock_logger.return_value = Mock()
             return LitterboxSimulator()
