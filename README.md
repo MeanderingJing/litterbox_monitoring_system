@@ -9,7 +9,7 @@ This is an on-going project that is constantly being improved.
 ![System Diagram](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/LitterLog-high-level-diagram.png)
 
 # Spin up the backend using Docker compose
-sudo docker compose up
+`sudo docker compose up`
 ## What does the docker compose command do?
 - Spin up the PostgreSQL database
 - Spin up the RabbitMQ service
@@ -24,11 +24,12 @@ Using `flask run` locally instead of Docker for this allows fast iteration, as I
 For production, use gunicorn and nginx (my own production server), a third-party platform-as-a-service (Heroku, Fly.io, etc), or a cloud provider.
 
 # Run frontend locally for development
-npm run dev
+`npm run dev`
 
 For production, deploy to Vercel or a cloud provider.
-
+## Litterlog Sign in Page
 ![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/Litterlog_sign_in.png)
+## Litter Box Usage Visualization
 ![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/docker/add-dockerfiles-compose/litterbox_usage_data_visualization.png)
 
 
