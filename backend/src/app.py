@@ -27,6 +27,7 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
 )
+
 db_gateway = PostgreSQLGateway(DATABASE_URL)
 
 app = Flask(__name__)
