@@ -13,7 +13,7 @@ from flask_jwt_extended import (
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 
-from database.postgresql_gateway import PostgreSQLGateway
+from database_support.postgresql_gateway import PostgreSQLGateway
 from models.models import (
     LitterboxUsageData,
     UserInfo,
@@ -27,6 +27,7 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
 )
+
 db_gateway = PostgreSQLGateway(DATABASE_URL)
 
 app = Flask(__name__)

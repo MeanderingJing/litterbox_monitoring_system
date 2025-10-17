@@ -1,3 +1,15 @@
+"""
+A data generator that simulates IoT sensor data from smart litterboxes for cats.
+This simulator produces authentic usage patterns and sensor readings for development,
+testing, and demonstration purposes.
+
+The simulator used pre-defined edge device ID.
+
+Data Distribution:
+- Publishes sensor data to RabbitMQ message queue in real-time
+- Automatic fallback to local JSON file storage if RabbitMQ unavailable
+"""
+
 import uuid
 import random
 import schedule
@@ -233,7 +245,8 @@ class LitterboxSimulator:
 
     def process_data(self, data: List[Dict]):
         """
-        Process the generated data by sending each record to RabbitMQ
+        Process the generated data by sending each record to RabbitMQ. If RabbitMQ is unavailable,
+        fall back to saving the data to a local file.
         """
         logger.info(f"Processing {len(data)} usage records...")
 
@@ -290,7 +303,7 @@ class LitterboxSimulator:
             self.save_data_to_file(data)
 
     def generate_initial_week(self):
-        """Generate initial week's worth of data"""
+        """Generate initial week's worth of data and send to RabbitMQ."""
         logger.info("Generating initial week's data...")
         data = self.generate_week_data(self.current_week_start)
         self.process_data(data)
@@ -309,7 +322,7 @@ class LitterboxSimulator:
             self.generate_next_week()
 
     def generate_next_week(self):
-        """Generate next week's data (scheduled task)"""
+        """Generate next week's data (scheduled task) and send to RabbitMQ."""
         logger.info("Generating next week's data...")
         # Move to the next 7-day period
         self.current_week_start += timedelta(days=7)

@@ -16,14 +16,14 @@ from rabbitmq_support.rabbitmq_gateway import (
     ROUTING_KEY,
     QUEUE_NAME,
 )
-from database.postgresql_gateway import PostgreSQLGateway
+from database_support.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
 
 # Database Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
+    "postgresql://example_user:example_password@db:5432/example_db",
 )
 
 # Consumer Configuration
