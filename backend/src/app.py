@@ -13,6 +13,7 @@ from flask_jwt_extended import (
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 
+from config.logging import get_logger
 from database_support.postgresql_gateway import PostgreSQLGateway
 from models.models import (
     LitterboxUsageData,
@@ -27,6 +28,8 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
 )
+
+logger = get_logger(__name__)
 
 db_gateway = PostgreSQLGateway(DATABASE_URL)
 
@@ -45,6 +48,7 @@ jwt = JWTManager(app)
 @app.before_request
 def create_db_session():
     g.db_session = db_gateway.SessionLocal()
+    logger.debug("DB session created for %s %s", request.method, request.path)
 
 
 @app.teardown_request
@@ -53,8 +57,19 @@ def shutdown_session(exeption=None):
     db_session = g.pop("db_session", None)
     if db_session is not None:
         if exeption:
+            logger.error(
+                "Request %s %s raised %s, rolling back session",
+                request.method,
+                request.path,
+                exeption,
+            )
             db_session.rollback()
         else:
+            logger.debug(
+                "Committing DB session for %s %s",
+                request.method,
+                request.path,
+            )
             db_session.commit()
         db_session.close()
 
@@ -69,6 +84,7 @@ def register():
 
     # Validate input
     if not username or not password or not email:
+        logger.warning("Registration failed: missing fields for username=%s", username)
         return jsonify({"msg": "Username, password, and email are required"}), 400
 
     # Check if username or email already exists
@@ -79,6 +95,7 @@ def register():
         .filter((UserInfo.username == username) | (UserInfo.email == email))
         .first()
     ):
+        logger.warning("Registration failed: user already exists username=%s", username)
         return jsonify({"error": "User already exists."}), 400
 
     # Hash the password and save the user
@@ -86,6 +103,7 @@ def register():
     new_user = UserInfo(username=username, email=email, password_hash=hashed_password)
     session.add(new_user)
     session.commit()
+    logger.info("User registered successfully username=%s id=%s", username, new_user.id)
     return jsonify({"msg": "User registered successfully"}), 201
 
 
@@ -98,15 +116,18 @@ def login():
 
     # Validate input
     if not username or not password:
+        logger.warning("Login failed: missing username or password")
         return jsonify({"msg": "Username and password are required"}), 400
 
     # Check if user exists and password is correct
     user = session.query(UserInfo).filter_by(username=username).first()
     if not user or not bcrypt.check_password_hash(user.password_hash, password):
+        logger.warning("Login failed: invalid credentials for username=%s", username)
         return jsonify({"error": "Invalid username or password"}), 401
 
     # Create JWT token
     access_token = create_access_token(identity=str(user.id))
+    logger.info("Login successful for user_id=%s username=%s", user.id, user.username)
     return (
         jsonify(
             {
@@ -135,6 +156,10 @@ def create_cat():
     session.add(cat)
     session.commit()
 
+    logger.info(
+        "Created cat id=%s name=%s owner_id=%s", cat.id, cat.name, current_user_id
+    )
+
     return (
         jsonify(
             {
@@ -158,11 +183,24 @@ def create_litterbox():
 
     cat = session.query(CatInfo).get(data["cat_id"])
     if not cat or str(cat.owner_id) != current_user_id:
+        logger.warning(
+            "Unauthorized litterbox creation attempt for cat_id=%s by user_id=%s",
+            data.get("cat_id"),
+            current_user_id,
+        )
         return jsonify({"error": "Unauthorized"}), 403
 
     litterbox = LitterboxInfo(cat_id=data["cat_id"], name=data["name"])
     session.add(litterbox)
     session.commit()
+
+    logger.info(
+        "Created litterbox id=%s name=%s cat_id=%s owner_id=%s",
+        litterbox.id,
+        litterbox.name,
+        litterbox.cat_id,
+        current_user_id,
+    )
 
     return jsonify(
         {
@@ -183,10 +221,20 @@ def register_edge_devices():
 
     litterbox = session.query(LitterboxInfo).get(data["litterbox_id"])
     if not litterbox:
+        logger.warning(
+            "Edge device registration failed: litterbox not found litterbox_id=%s",
+            data.get("litterbox_id"),
+        )
         return jsonify({"error": "Litterbox not found."}), 404
 
     cat = session.query(CatInfo).get(litterbox.cat_id)
     if not cat or str(cat.owner_id) != current_user_id:
+        logger.warning(
+            "Unauthorized edge device registration attempt for litterbox_id=%s "
+            "by user_id=%s",
+            data.get("litterbox_id"),
+            current_user_id,
+        )
         return jsonify({"error": "Unauthorized"}), 403
 
     edge_device = LitterboxEdgeDeviceInfo(
@@ -197,6 +245,15 @@ def register_edge_devices():
     )
     session.add(edge_device)
     session.commit()
+
+    logger.info(
+        "Registered edge device id=%s name=%s type=%s litterbox_id=%s owner_id=%s",
+        edge_device.id,
+        edge_device.device_name,
+        edge_device.device_type,
+        edge_device.litterbox_id,
+        current_user_id,
+    )
 
     return jsonify(
         {
