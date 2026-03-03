@@ -1,4 +1,13 @@
 import os
+import sys
+from pathlib import Path
+
+# Ensure backend/src is on the path so imports like config.* and database_support.* resolve
+# when running via `flask run` (FLASK_APP=src.app) or `flask --app src/app.py run` from backend.
+_src_dir = Path(__file__).resolve().parent
+if str(_src_dir) not in sys.path:
+    sys.path.insert(0, str(_src_dir))
+
 from datetime import timedelta, datetime
 import uuid
 from flask import g, Flask, request, jsonify
@@ -26,7 +35,7 @@ from models.models import (
 # Database Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
+    "postgresql://example_user:example_password@localhost:5435/example_db",
 )
 
 logger = get_logger(__name__)
