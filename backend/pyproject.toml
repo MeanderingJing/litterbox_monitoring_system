@@ -2,13 +2,17 @@
 name = "litterbox-monitoring-system-backend"
 version = "0.1.0"
 description = "A Python package retrieving litterbox usage data and storing in a database."
-authors = ["Jing Li"]
+authors = ["Emma Li"]
 readme = "README.md"
-packages = [ {include = "config", from = "src"},
-            {include = "database", from = "src"},
-            {include = "models", from = "src"},
-            {include = "services", from = "src"},
-            {include = "data_source_simulator", from = "src"}]
+packages = [
+  { include = "config", from = "src" },
+  { include = "database_support", from = "src" },
+  { include = "models", from = "src" },
+  { include = "data_source", from = "src" },
+  { include = "data_persister", from = "src" },
+  { include = "data_analyzer", from = "src" },
+  { include = "rabbitmq_support", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
