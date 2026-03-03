@@ -24,6 +24,9 @@ from sqlalchemy import and_, text
 from sqlalchemy.orm import joinedload
 from werkzeug.exceptions import HTTPException
 
+from prometheus_client import Counter
+from prometheus_flask_exporter import PrometheusMetrics
+
 from config.logging import get_logger
 from database_support.postgresql_gateway import PostgreSQLGateway
 from models.models import (
@@ -41,14 +44,16 @@ DATABASE_URL = os.getenv(
 )
 
 logger = get_logger(__name__)
-
 db_gateway = PostgreSQLGateway(DATABASE_URL)
 
 app = Flask(__name__)
-# Configuration
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "your_jwt_secret_key")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Initialize Prometheus metrics
+metrics = PrometheusMetrics(app)
+metrics.info("app_info", "Application info", version="0.1.0")
 
 # Initialize extensions
 CORS(app)
@@ -170,7 +175,7 @@ def ready():
         return jsonify({"status": "ok"}), 200
     except Exception as e:
         logger.exception("Readiness check failed")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), 503
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -684,7 +689,7 @@ def get_all_my_cats_litterbox_usage():
 
     return jsonify({"cats": result, "total_cats": len(cats)}), 200
 
-app.run(debug=True, host="0.0.0.0", port=8000)
+# app.run(debug=True, host="0.0.0.0", port=8000)
 
 # @app.route("/cats/<cat_id>/litterbox-usage/stats", methods=["GET"])
 # @jwt_required()
