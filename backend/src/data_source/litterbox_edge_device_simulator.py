@@ -18,6 +18,7 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Dict
 import json
 import logging
+import os
 import pika
 
 from models.models import LitterboxUsageData
@@ -30,6 +31,8 @@ from rabbitmq_support.rabbitmq_gateway import (
 from config.logging import get_logger
 
 logger = get_logger(__name__)
+
+SIMULATED_DATA_DIR = os.getenv("SIMULATED_DATA_DIR", "simulated_litterbox_data")
 
 # Optionally reduce Pika log verbosity
 get_logger("pika").setLevel(logging.WARNING)
@@ -238,10 +241,13 @@ class LitterboxSimulator:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"litterbox_data_{timestamp}.json"
 
-        with open(filename, "w") as f:
+        os.makedirs(SIMULATED_DATA_DIR, exist_ok=True)
+        filepath = os.path.join(SIMULATED_DATA_DIR, filename)
+
+        with open(filepath, "w") as f:
             json.dump(data, f, indent=2, default=str)
 
-        logger.info(f"Data saved to {filename}")
+        logger.info(f"Data saved to {filepath}")
 
     def process_data(self, data: List[Dict]):
         """
@@ -253,54 +259,86 @@ class LitterboxSimulator:
         successful_publishes = 0
         failed_publishes = 0
 
-        # Sending to a message queue
-        try:
-            # Test connection first
-            with get_rabbitmq_connection() as channel:
-                logger.info("Successfully connected to RabbitMQ")
+        max_retries = int(os.getenv("RABBITMQ_CONNECT_RETRIES", "5"))
+        retry_delay = int(os.getenv("RABBITMQ_CONNECT_RETRY_DELAY", "5"))
 
-                # Process each record
-                for i, record in enumerate(data, 1):
-                    try:
-                        self.publish_to_rabbitmq(channel, record)
-                        successful_publishes += 1
+        # Sending to a message queue with retry on initial connection
+        for attempt in range(1, max_retries + 1):
+            try:
+                # Test connection first
+                with get_rabbitmq_connection() as channel:
+                    logger.info(
+                        "Successfully connected to RabbitMQ (attempt %s/%s)",
+                        attempt,
+                        max_retries,
+                    )
 
-                        # Log progress for large batches
-                        if i % 10 == 0 or i == len(data):
-                            logger.info(
-                                f"Published {i}/{len(data)} messages to RabbitMQ"
+                    # Process each record
+                    for i, record in enumerate(data, 1):
+                        try:
+                            self.publish_to_rabbitmq(channel, record)
+                            successful_publishes += 1
+
+                            # Log progress for large batches
+                            if i % 10 == 0 or i == len(data):
+                                logger.info(
+                                    "Published %s/%s messages to RabbitMQ", i, len(data)
+                                )
+
+                        except Exception as e:
+                            failed_publishes += 1
+                            logger.error(
+                                "Failed to publish record %s: %s",
+                                record.get("id", "unknown"),
+                                e,
                             )
 
-                    except Exception as e:
-                        failed_publishes += 1
-                        logger.error(
-                            f"Failed to publish record {record.get('id', 'unknown')}: {e}"
-                        )
+                            # Continue processing other records even if one fails
+                            continue
 
-                        # Continue processing other records even if one fails
-                        continue
-
-            # Summary
-            logger.info(
-                f"Data processing completed: {successful_publishes} successful, {failed_publishes} failed"
-            )
-
-            # Also save to file as backup
-            if successful_publishes > 0:
-                self.save_data_to_file(
-                    data,
-                    f"backup_litterbox_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                # Summary
+                logger.info(
+                    "Data processing completed: %s successful, %s failed",
+                    successful_publishes,
+                    failed_publishes,
                 )
 
-        except pika.exceptions.AMQPConnectionError:
-            logger.error(
-                "Could not connect to RabbitMQ. Falling back to file storage only."
-            )
-            self.save_data_to_file(data)
-        except Exception as e:
-            logger.error(f"Unexpected error during data processing: {e}")
-            # Fallback to file storage
-            self.save_data_to_file(data)
+                # Also save to file as backup
+                if successful_publishes > 0:
+                    self.save_data_to_file(
+                        data,
+                        f"backup_litterbox_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    )
+
+                # Successful run; no need to retry further
+                return
+
+            except pika.exceptions.AMQPConnectionError as e:
+                if attempt == max_retries:
+                    logger.error(
+                        "Could not connect to RabbitMQ after %s attempts. "
+                        "Falling back to file storage only. Last error: %s",
+                        max_retries,
+                        e,
+                    )
+                    self.save_data_to_file(data)
+                    return
+
+                logger.warning(
+                    "Attempt %s/%s to connect to RabbitMQ failed: %s. "
+                    "Retrying in %s seconds...",
+                    attempt,
+                    max_retries,
+                    e,
+                    retry_delay,
+                )
+                time.sleep(retry_delay)
+
+            except Exception as e:
+                logger.error("Unexpected error during data processing: %s", e)
+                # Fallback to file storage
+                self.save_data_to_file(data)
+                return
 
     def generate_initial_week(self):
         """Generate initial week's worth of data and send to RabbitMQ."""
