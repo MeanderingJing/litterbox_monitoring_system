@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from pathlib import Path
 
 # Ensure backend/src is on the path so imports like config.* and database_support.* resolve
@@ -21,6 +22,7 @@ from flask_jwt_extended import (
 )
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
+from werkzeug.exceptions import HTTPException
 
 from config.logging import get_logger
 from database_support.postgresql_gateway import PostgreSQLGateway
@@ -52,6 +54,78 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 CORS(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
+
+
+@app.before_request
+def start_request_context():
+    """Set up per-request logging context such as timing and request ID."""
+    g.request_start_time = time.time()
+    g.request_id = str(uuid.uuid4())
+
+
+@app.after_request
+def log_request(response):
+    """Log a structured summary of each HTTP request."""
+    try:
+        duration_ms = (time.time() - getattr(g, "request_start_time", time.time())) * 1000
+        try:
+            user_id = get_jwt_identity()
+        except Exception:
+            user_id = None
+
+        logger.info(
+            "HTTP request completed",
+            extra={
+                "request_id": getattr(g, "request_id", None),
+                "method": request.method,
+                "path": request.path,
+                "status_code": response.status_code,
+                "duration_ms": round(duration_ms, 2),
+                "user_id": user_id,
+                "remote_addr": request.remote_addr,
+            },
+        )
+    except Exception:
+        # Ensure logging issues never break responses
+        logger.exception("Failed to log HTTP request")
+
+    return response
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    """Global error handler to ensure consistent error responses and logging."""
+    if isinstance(error, HTTPException):
+        status_code = error.code or 500
+        # Treat 4xx as warnings and 5xx as errors
+        if 400 <= status_code < 500:
+            logger.warning(
+                "HTTPException during request %s %s: %s",
+                request.method,
+                request.path,
+                error,
+            )
+        else:
+            logger.error(
+                "HTTPException during request %s %s: %s",
+                request.method,
+                request.path,
+                error,
+            )
+        response = jsonify({"error": error.description or "Request failed"})
+        response.status_code = status_code
+        return response
+
+    # Non-HTTP exceptions are treated as internal server errors
+    logger.exception(
+        "Unhandled exception during request %s %s (request_id=%s)",
+        request.method,
+        request.path,
+        getattr(g, "request_id", None),
+    )
+    response = jsonify({"error": "Internal server error"})
+    response.status_code = 500
+    return response
 
 
 @app.before_request
@@ -595,6 +669,7 @@ def get_all_my_cats_litterbox_usage():
 
     return jsonify({"cats": result, "total_cats": len(cats)}), 200
 
+app.run(debug=True, host="0.0.0.0", port=8000)
 
 # @app.route("/cats/<cat_id>/litterbox-usage/stats", methods=["GET"])
 # @jwt_required()
@@ -702,4 +777,4 @@ def get_all_my_cats_litterbox_usage():
 #     with app.app_context():
 #         db.create_all()
 #     app.run(debug=True)
-app.run(debug=True, host="0.0.0.0", port=8000)
+
