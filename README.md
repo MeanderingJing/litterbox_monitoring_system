@@ -17,13 +17,16 @@ This is an on-going project that is constantly being improved.
 - Run the data persister in docker container, which consumes messages from RabbitMQ and send it to the database
 
 # Run backend flask app locally for development
-`flask run`
+Create a virtual environment first. The run: 
+`pip install -r requirements.txt`
+`flask run --port 8000`
 
 Using `flask run` locally instead of Docker for this allows fast iteration, as I don't need to rebuild the container every time when there're code changes.
 
 For production, use gunicorn and nginx (my own production server), a third-party platform-as-a-service (Heroku, Fly.io, etc), or a cloud provider.
 
 # Run frontend locally for development
+`npm install` 
 `npm run dev`
 
 For production, deploy to Vercel or a cloud provider.
