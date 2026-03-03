@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: example_password
       POSTGRES_DB: example_db
     volumes:
-      - ./docker-data/.pg-data:/var/lib/postgresql/data
+      - ./.docker-data/.pg-data:/var/lib/postgresql/data
     ports:
       - "5435:5432"
     healthcheck:
@@ -39,29 +39,6 @@ services:
       - ./.docker-data/.rabbitmq-data:/var/lib/rabbitmq
     networks:
       - litterbox-network
-
-  litterbox_simulator:
-    build:
-      context: ./backend
-      dockerfile: src/data_source/Dockerfile
-    container_name: litterbox_data_source_simulator
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: user
-      RABBITMQ_PASSWORD: password
-
-    volumes:
-      - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
-    command: ["python", "data_source/litterbox_edge_device_simulator.py"]
-    restart: unless-stopped
-    networks:
-      - litterbox-network
-
   # TO CHECK
   data_persister:
     build:
@@ -83,8 +60,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      litterbox_simulator:
-        condition: service_started
+      # litterbox_simulator:
+      #   condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import pika; import os; pika.BlockingConnection(pika.URLParameters(os.getenv('RABBITMQ_URL'))).close()"]
@@ -109,7 +86,27 @@ networks:
   litterbox-network:
     driver: bridge
 
+  # litterbox_simulator:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: src/data_source/Dockerfile
+  #   container_name: litterbox_data_source_simulator
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
 
+  #   environment:
+  #     RABBITMQ_HOST: rabbitmq
+  #     RABBITMQ_PORT: 5672
+  #     RABBITMQ_USER: user
+  #     RABBITMQ_PASSWORD: password
+
+  #   volumes:
+  #     - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
+  #   command: ["python", "data_source/litterbox_edge_device_simulator.py"]
+  #   restart: unless-stopped
+  #   networks:
+  #     - litterbox-network
 
 
 
