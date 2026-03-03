@@ -1,6 +1,7 @@
 // runs on the client-side (browser)
-'use client' 
+'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
+import { API_BASE_URL } from '../config'
 
 // A "container" for sharing authentication data
 const AuthContext = createContext()
@@ -30,7 +31,7 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch('http://192.168.40.159:8000/login', {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ export function AuthProvider({ children }) {
 
   const register = async (username, email, password) => {
     try {
-      const response = await fetch('http://192.168.40.159:8000/register', {
+      const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

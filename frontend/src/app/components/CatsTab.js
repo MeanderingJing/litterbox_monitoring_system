@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../config'
 
 export default function CatsTab({ cats, setCats, onDataChange }) {
   const [showForm, setShowForm] = useState(false)
@@ -19,7 +20,7 @@ export default function CatsTab({ cats, setCats, onDataChange }) {
     setError('')
 
     try {
-      const response = await fetch('http://192.168.40.159:8000/cats', {
+      const response = await fetch(`${API_BASE_URL}/cats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
