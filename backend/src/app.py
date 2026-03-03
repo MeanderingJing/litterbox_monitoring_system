@@ -11,7 +11,7 @@ if str(_src_dir) not in sys.path:
 
 from datetime import timedelta, datetime
 import uuid
-from flask import g, Flask, request, jsonify
+from flask import g, Flask, request, jsonify, Response
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import (
@@ -20,7 +20,7 @@ from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
 )
-from sqlalchemy import and_
+from sqlalchemy import and_, text
 from sqlalchemy.orm import joinedload
 from werkzeug.exceptions import HTTPException
 
@@ -156,6 +156,21 @@ def shutdown_session(exeption=None):
             db_session.commit()
         db_session.close()
 
+@app.route("/health", methods=["GET"])
+def health():
+    # Simple “process is up” check – no DB
+    return jsonify({"status": "ok"}), 200
+
+@app.route("/ready", methods=["GET"])
+def ready():
+    # Check if the DB is ready
+    try:
+        db_session = g.db_session
+        db_session.execute(text("SELECT 1"))
+        return jsonify({"status": "ok"}), 200
+    except Exception as e:
+        logger.exception("Readiness check failed")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/register", methods=["POST"])
 def register():
