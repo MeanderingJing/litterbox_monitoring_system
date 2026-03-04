@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../config'
 
 export default function EdgeDevicesTab({ litterboxes, edgeDevices, setEdgeDevices, onDataChange }) {
   const [showForm, setShowForm] = useState(false)
@@ -29,7 +30,7 @@ export default function EdgeDevicesTab({ litterboxes, edgeDevices, setEdgeDevice
     setError('')
 
     try {
-      const response = await fetch('http://192.168.40.159:8000/edge_devices', {
+      const response = await fetch(`${API_BASE_URL}/edge_devices`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

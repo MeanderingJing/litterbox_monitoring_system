@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../config'
 import CatsTab from './CatsTab'
 import LitterboxesTab from './LitterboxesTab'
 import EdgeDevicesTab from './EdgeDevicesTab'
@@ -45,7 +46,7 @@ export default function Dashboard() {
 
   const fetchCats = async () => {
     try {
-      const response = await fetch('http://192.168.40.159:8000/cats', {
+      const response = await fetch(`${API_BASE_URL}/cats`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
   const fetchLitterboxes = async () => {
     try {
-      const response = await fetch('http://192.168.40.159:8000/litterboxes', {
+      const response = await fetch(`${API_BASE_URL}/litterboxes`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
@@ -77,7 +78,7 @@ export default function Dashboard() {
 
   const fetchEdgeDevices = async () => {
     try {
-      const response = await fetch('http://192.168.40.159:8000/edge_devices', {
+      const response = await fetch(`${API_BASE_URL}/edge_devices`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }

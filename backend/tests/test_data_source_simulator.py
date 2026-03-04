@@ -28,9 +28,7 @@ class TestLitterboxSimulator:
     def mock_datetime_now(self):
         """Mock datetime.now to return a fixed date"""
         fixed_date = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
-        with patch(
-            "data_source.litterbox_edge_device_simulator.datetime"
-        ) as mock_dt:
+        with patch("data_source.litterbox_edge_device_simulator.datetime") as mock_dt:
             mock_dt.now.return_value = fixed_date
             mock_dt.side_effect = lambda *args, **kw: datetime(*args, **kw)
             yield mock_dt
@@ -161,7 +159,7 @@ class TestLitterboxSimulator:
 
         simulator.save_data_to_file(test_data, filename)
 
-        mock_file.assert_called_once_with(filename, "w")
+        mock_file.assert_called_once_with("simulated_litterbox_data/test_file.json", "w")
         mock_json_dump.assert_called_once_with(
             test_data,
             mock_file.return_value.__enter__.return_value,
@@ -181,7 +179,7 @@ class TestLitterboxSimulator:
 
         simulator.save_data_to_file(test_data)
 
-        expected_filename = "litterbox_data_20240115_120000.json"
+        expected_filename = "simulated_litterbox_data/litterbox_data_20240115_120000.json"
         mock_file.assert_called_once_with(expected_filename, "w")
         mock_json_dump.assert_called_once_with(
             test_data,

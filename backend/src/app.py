@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import timedelta, datetime
 import uuid
 from flask import g, Flask, request, jsonify
@@ -10,8 +11,11 @@ from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
 )
-from sqlalchemy import and_
+from sqlalchemy import and_, text
 from sqlalchemy.orm import joinedload
+from werkzeug.exceptions import HTTPException
+
+from prometheus_flask_exporter import PrometheusMetrics
 
 from config.logging import get_logger
 from database_support.postgresql_gateway import PostgreSQLGateway
@@ -26,23 +30,99 @@ from models.models import (
 # Database Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://example_user:example_password@192.168.40.159:5435/example_db",
+    "postgresql://example_user:example_password@localhost:5435/example_db",
 )
 
 logger = get_logger(__name__)
-
 db_gateway = PostgreSQLGateway(DATABASE_URL)
 
 app = Flask(__name__)
-# Configuration
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "your_jwt_secret_key")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Initialize Prometheus metrics
+metrics = PrometheusMetrics(app)
+metrics.info("app_info", "Application info", version="0.1.0")
 
 # Initialize extensions
 CORS(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
+
+
+@app.before_request
+def start_request_context():
+    """Set up per-request logging context such as timing and request ID."""
+    g.request_start_time = time.time()
+    g.request_id = str(uuid.uuid4())
+
+
+@app.after_request
+def log_request(response):
+    """Log a structured summary of each HTTP request."""
+    try:
+        duration_ms = (
+            time.time() - getattr(g, "request_start_time", time.time())
+        ) * 1000
+        try:
+            user_id = get_jwt_identity()
+        except Exception:
+            user_id = None
+
+        logger.info(
+            "HTTP request completed",
+            extra={
+                "request_id": getattr(g, "request_id", None),
+                "method": request.method,
+                "path": request.path,
+                "status_code": response.status_code,
+                "duration_ms": round(duration_ms, 2),
+                "user_id": user_id,
+                "remote_addr": request.remote_addr,
+            },
+        )
+    except Exception:
+        # Ensure logging issues never break responses
+        logger.exception("Failed to log HTTP request")
+
+    return response
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    """Global error handler to ensure consistent error responses and logging."""
+    if isinstance(error, HTTPException):
+        status_code = error.code or 500
+        # Treat 4xx as warnings and 5xx as errors
+        if 400 <= status_code < 500:
+            logger.warning(
+                "HTTPException during request %s %s: %s",
+                request.method,
+                request.path,
+                error,
+            )
+        else:
+            logger.error(
+                "HTTPException during request %s %s: %s",
+                request.method,
+                request.path,
+                error,
+            )
+        response = jsonify({"error": error.description or "Request failed"})
+        response.status_code = status_code
+        return response
+
+    # Non-HTTP exceptions are treated as internal server errors
+    logger.exception(
+        "Unhandled exception during request %s %s (request_id=%s)",
+        request.method,
+        request.path,
+        getattr(g, "request_id", None),
+    )
+    response = jsonify({"error": "Internal server error"})
+    response.status_code = 500
+    return response
 
 
 @app.before_request
@@ -72,6 +152,24 @@ def shutdown_session(exeption=None):
             )
             db_session.commit()
         db_session.close()
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    # Simple “process is up” check – no DB
+    return jsonify({"status": "ok"}), 200
+
+
+@app.route("/ready", methods=["GET"])
+def ready():
+    # Check if the DB is ready
+    try:
+        db_session = g.db_session
+        db_session.execute(text("SELECT 1"))
+        return jsonify({"status": "ok"}), 200
+    except Exception as e:
+        logger.exception("Readiness check failed")
+        return jsonify({"status": "error", "message": str(e)}), 503
 
 
 @app.route("/register", methods=["POST"])
@@ -587,6 +685,8 @@ def get_all_my_cats_litterbox_usage():
     return jsonify({"cats": result, "total_cats": len(cats)}), 200
 
 
+# app.run(debug=True, host="0.0.0.0", port=8000)
+
 # @app.route("/cats/<cat_id>/litterbox-usage/stats", methods=["GET"])
 # @jwt_required()
 # def get_cat_litterbox_usage_stats(cat_id):
@@ -693,4 +793,3 @@ def get_all_my_cats_litterbox_usage():
 #     with app.app_context():
 #         db.create_all()
 #     app.run(debug=True)
-app.run(debug=True, host="0.0.0.0", port=8000)

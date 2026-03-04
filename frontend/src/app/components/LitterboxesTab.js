@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../config'
 
 export default function LitterboxesTab({ cats, litterboxes, setLitterboxes, onDataChange }) {
   const [showForm, setShowForm] = useState(false)
@@ -18,7 +19,7 @@ export default function LitterboxesTab({ cats, litterboxes, setLitterboxes, onDa
     setError('')
 
     try {
-      const response = await fetch('http://192.168.40.159:8000/litterboxes', {
+      const response = await fetch(`${API_BASE_URL}/litterboxes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

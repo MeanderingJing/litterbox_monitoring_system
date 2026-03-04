@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { API_BASE_URL } from '../config'
 
 export default function LitterboxUsageTab({ cats, user }) {
   const [selectedCat, setSelectedCat] = useState('')
@@ -40,7 +41,7 @@ export default function LitterboxUsageTab({ cats, user }) {
       })
 
       const response = await fetch(
-        `http://192.168.40.159:8000/cats/${selectedCat}/litterbox-usage?${params}`,
+        `${API_BASE_URL}/cats/${selectedCat}/litterbox-usage?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${user.token}`

@@ -3,7 +3,9 @@ const nextConfig = {
   experimental: {
     appDir: true,
   },
-  allowedDevOrigins: ['http://192.168.40.159:3000'],
+  allowedDevOrigins: [
+    process.env.NEXT_PUBLIC_APP_ORIGIN || 'http://localhost:3000',
+  ],
 }
 
 module.exports = nextConfig
