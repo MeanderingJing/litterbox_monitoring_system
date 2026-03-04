@@ -28,9 +28,7 @@ class TestLitterboxSimulator:
     def mock_datetime_now(self):
         """Mock datetime.now to return a fixed date"""
         fixed_date = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
-        with patch(
-            "data_source.litterbox_edge_device_simulator.datetime"
-        ) as mock_dt:
+        with patch("data_source.litterbox_edge_device_simulator.datetime") as mock_dt:
             mock_dt.now.return_value = fixed_date
             mock_dt.side_effect = lambda *args, **kw: datetime(*args, **kw)
             yield mock_dt

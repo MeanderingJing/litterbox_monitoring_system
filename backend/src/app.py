@@ -1,17 +1,8 @@
 import os
-import sys
 import time
-from pathlib import Path
-
-# Ensure backend/src is on the path so imports like config.* and database_support.* resolve
-# when running via `flask run` (FLASK_APP=src.app) or `flask --app src/app.py run` from backend.
-_src_dir = Path(__file__).resolve().parent
-if str(_src_dir) not in sys.path:
-    sys.path.insert(0, str(_src_dir))
-
 from datetime import timedelta, datetime
 import uuid
-from flask import g, Flask, request, jsonify, Response
+from flask import g, Flask, request, jsonify
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import (
@@ -72,7 +63,9 @@ def start_request_context():
 def log_request(response):
     """Log a structured summary of each HTTP request."""
     try:
-        duration_ms = (time.time() - getattr(g, "request_start_time", time.time())) * 1000
+        duration_ms = (
+            time.time() - getattr(g, "request_start_time", time.time())
+        ) * 1000
         try:
             user_id = get_jwt_identity()
         except Exception:
@@ -161,10 +154,12 @@ def shutdown_session(exeption=None):
             db_session.commit()
         db_session.close()
 
+
 @app.route("/health", methods=["GET"])
 def health():
     # Simple “process is up” check – no DB
     return jsonify({"status": "ok"}), 200
+
 
 @app.route("/ready", methods=["GET"])
 def ready():
@@ -176,6 +171,7 @@ def ready():
     except Exception as e:
         logger.exception("Readiness check failed")
         return jsonify({"status": "error", "message": str(e)}), 503
+
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -689,6 +685,7 @@ def get_all_my_cats_litterbox_usage():
 
     return jsonify({"cats": result, "total_cats": len(cats)}), 200
 
+
 # app.run(debug=True, host="0.0.0.0", port=8000)
 
 # @app.route("/cats/<cat_id>/litterbox-usage/stats", methods=["GET"])
@@ -797,4 +794,3 @@ def get_all_my_cats_litterbox_usage():
 #     with app.app_context():
 #         db.create_all()
 #     app.run(debug=True)
-
