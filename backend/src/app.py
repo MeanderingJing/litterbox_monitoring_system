@@ -15,7 +15,6 @@ from sqlalchemy import and_, text
 from sqlalchemy.orm import joinedload
 from werkzeug.exceptions import HTTPException
 
-from prometheus_client import Counter
 from prometheus_flask_exporter import PrometheusMetrics
 
 from config.logging import get_logger
