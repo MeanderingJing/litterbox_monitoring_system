@@ -55,6 +55,9 @@ services:
       POSTGRES_USER: example_user
       POSTGRES_PASSWORD: example_password
       POSTGRES_DB: example_db
+      # Optional: set MONGODB_URI (e.g. in .env) to dual-write usage events to MongoDB Atlas
+      MONGODB_URI: ${MONGODB_URI:-}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-litterbox}
     depends_on:
       db:
         condition: service_healthy

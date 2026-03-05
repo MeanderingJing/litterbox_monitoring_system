@@ -17,6 +17,7 @@ from rabbitmq_support.rabbitmq_gateway import (
     QUEUE_NAME,
 )
 from database_support.postgresql_gateway import PostgreSQLGateway
+from database_support.mongodb_gateway import MongoDBGateway
 
 logger = get_logger(__name__)
 
@@ -25,6 +26,9 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://example_user:example_password@db:5432/example_db",
 )
+# Optional: secondary store (e.g. MongoDB Atlas). If set, usage events are dual-written.
+MONGODB_URI = os.getenv("MONGODB_URI")
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "litterbox")
 
 # Consumer Configuration
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "10"))  # Process messages in batches
@@ -35,6 +39,9 @@ PREFETCH_COUNT = int(os.getenv("PREFETCH_COUNT", "50"))  # How many messages to 
 class LitterboxConsumer:
     def __init__(self):
         self.db_gateway = PostgreSQLGateway(DATABASE_URL)
+        self.mongo_gateway: MongoDBGateway | None = None
+        if MONGODB_URI:
+            self.mongo_gateway = MongoDBGateway(MONGODB_URI, db_name=MONGODB_DB_NAME)
         self.connection = None
         self.channel = None
         self.should_stop = False
@@ -46,6 +53,7 @@ class LitterboxConsumer:
 
         logger.info(
             f"Consumer initialized with batch size: {BATCH_SIZE}, timeout: {BATCH_TIMEOUT}s"
+            + (" (MongoDB secondary store enabled)" if self.mongo_gateway else "")
         )
 
     def setup_database(self):
@@ -54,6 +62,9 @@ class LitterboxConsumer:
             self.db_gateway.connect()
             self.db_gateway.create_tables()
             logger.info("Database setup completed successfully")
+            if self.mongo_gateway:
+                self.mongo_gateway.connect()
+                logger.info("MongoDB secondary store connected")
         except Exception as e:
             logger.error(f"Failed to setup database: {e}")
             raise
@@ -140,8 +151,19 @@ class LitterboxConsumer:
                 db_records.append(message_data)
                 delivery_tags.append(delivery_tag)
 
-            # Insert into database
+            # Insert into primary store (PostgreSQL)
             self.db_gateway.insert_litterbox_usage_data(db_records)
+
+            # Dual-write to MongoDB secondary store if configured (best-effort)
+            if self.mongo_gateway:
+                try:
+                    self.mongo_gateway.insert_litterbox_usage_batch(db_records)
+                except Exception as mongo_err:
+                    logger.warning(
+                        "MongoDB secondary write failed (batch still acked): %s",
+                        mongo_err,
+                        exc_info=True,
+                    )
 
             # Manually acknowledge all messages in batch
             for delivery_tag in delivery_tags:
@@ -272,8 +294,10 @@ class LitterboxConsumer:
         if self.connection and not self.connection.is_closed:
             self.connection.close()
 
-        # Close database connection
+        # Close database connections
         self.db_gateway.disconnect()
+        if self.mongo_gateway:
+            self.mongo_gateway.disconnect()
 
         logger.info("Consumer shutdown completed")
 
