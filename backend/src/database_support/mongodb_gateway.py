@@ -83,7 +83,9 @@ class MongoDBGateway:
         except BulkWriteError as e:
             # Duplicate key (11000) is acceptable for secondary store / replay
             if e.details and e.details.get("writeErrors"):
-                non_dup = [err for err in e.details["writeErrors"] if err.get("code") != 11000]
+                non_dup = [
+                    err for err in e.details["writeErrors"] if err.get("code") != 11000
+                ]
                 if non_dup:
                     logger.error(f"MongoDB batch write errors: {non_dup}")
                     raise
