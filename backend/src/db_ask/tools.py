@@ -44,9 +44,7 @@ async def execute_tool_requests(
     message: Message,
 ) -> list[ToolResultBlockParam]:
     """Execute tool_use blocks from the assistant message using the Postgres MCP client."""
-    tool_requests = [
-        block for block in message.content if block.type == "tool_use"
-    ]
+    tool_requests = [block for block in message.content if block.type == "tool_use"]
     results: list[ToolResultBlockParam] = []
     for tr in tool_requests:
         tool_use_id = tr.id
@@ -61,9 +59,7 @@ async def execute_tool_requests(
             status: Literal["success"] | Literal["error"] = (
                 "error" if (result and result.isError) else "success"
             )
-            results.append(
-                _build_tool_result_part(tool_use_id, content, status)
-            )
+            results.append(_build_tool_result_part(tool_use_id, content, status))
         except Exception as e:
             results.append(
                 _build_tool_result_part(

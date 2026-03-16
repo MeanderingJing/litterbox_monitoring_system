@@ -51,9 +51,7 @@ class DbChat:
 
             if response.stop_reason == "tool_use":
                 print("  (running tools…)")
-                tool_results = await execute_tool_requests(
-                    self.client, response
-                )
+                tool_results = await execute_tool_requests(self.client, response)
                 self.claude.add_user_message(self.messages, tool_results)
             else:
                 return self.claude.text_from_message(response)

@@ -45,7 +45,12 @@ def _server_params(connection_string: str) -> StdioServerParameters:
     """Build stdio server parameters for the Postgres MCP server."""
     return StdioServerParameters(
         command="npx",
-        args=["-y", "@henkey/postgres-mcp-server", "--connection-string", connection_string],
+        args=[
+            "-y",
+            "@henkey/postgres-mcp-server",
+            "--connection-string",
+            connection_string,
+        ],
         env=None,  # inherit so npx works (PATH, etc.)
     )
 
@@ -61,7 +66,9 @@ def _text_from_tool_result(result: types.CallToolResult) -> str:
     return ""
 
 
-def _rows_from_tool_result(result: types.CallToolResult) -> tuple[list[str], list[list[Any]]]:
+def _rows_from_tool_result(
+    result: types.CallToolResult,
+) -> tuple[list[str], list[list[Any]]]:
     """
     Try to get columns and rows from a types.CallToolResult (e.g. execute_query).
     Returns (columns, rows); if not structured, returns ([], []).
@@ -72,7 +79,10 @@ def _rows_from_tool_result(result: types.CallToolResult) -> tuple[list[str], lis
             cols = sc.get("columns") or sc.get("columnNames") or []
             rows = sc.get("rows") or sc.get("data") or []
             if cols or rows:
-                return (list(cols), [list(r) if not isinstance(r, list) else r for r in rows])
+                return (
+                    list(cols),
+                    [list(r) if not isinstance(r, list) else r for r in rows],
+                )
     text = _text_from_tool_result(result)
     if not text:
         return ([], [])
@@ -81,7 +91,10 @@ def _rows_from_tool_result(result: types.CallToolResult) -> tuple[list[str], lis
         if isinstance(data, dict):
             cols = data.get("columns", data.get("columnNames", []))
             rows = data.get("rows", data.get("data", []))
-            return (list(cols), [list(r) if not isinstance(r, list) else r for r in rows])
+            return (
+                list(cols),
+                [list(r) if not isinstance(r, list) else r for r in rows],
+            )
         if isinstance(data, list) and data and isinstance(data[0], dict):
             cols = list(data[0].keys())
             rows = [[r[k] for k in cols] for r in data]
@@ -103,7 +116,7 @@ class PostgresMCPClient:
     def __init__(self, connection_string: Optional[str] = None):
         self._connection_string = connection_string or get_connection_string()
         self._server_params = _server_params(self._connection_string)
-        self._exit_stack: AsyncExitStack = AsyncExitStack() 
+        self._exit_stack: AsyncExitStack = AsyncExitStack()
         self._session: Optional[ClientSession] = None
         self._tools_cache: Optional[list[types.Tool]] = None
 
@@ -154,7 +167,12 @@ class PostgresMCPClient:
         if "pg_manage_schema" in tool_names:
             schema_tool = "pg_manage_schema"
         else:
-            for name in ("schema_management", "get_schema_info", "list_tables", "get_schema"):
+            for name in (
+                "schema_management",
+                "get_schema_info",
+                "list_tables",
+                "get_schema",
+            ):
                 if name in tool_names:
                     schema_tool = name
                     break
