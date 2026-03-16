@@ -6,7 +6,7 @@ The end-to-end solution combines edge computing (implemented as a litterbox simu
 This is an on-going project that is constantly being improved.
 
 # System Diagram
-![System Diagram](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/LitterLog-high-level-diagram.png)
+![System Diagram](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/docs/images/LitterLog-high-level-diagram.png)
 
 # Spin up the backend using Docker compose
 `sudo docker compose up`
@@ -31,9 +31,9 @@ For production, use gunicorn and nginx (my own production server), a third-party
 
 For production, deploy to Vercel or a cloud provider.
 ## Litterlog Sign in Page
-![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/Litterlog_sign_in.png)
+![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/docs/images/Litterlog_sign_in.png)
 ## Litter Box Usage Visualization
-![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/litterbox_usage_data_visualization.png)
+![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/docs/images/litterbox_usage_data_visualization.png)
 
 ### Natural-language database queries with Postgres MCP and Claude
 
