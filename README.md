@@ -35,5 +35,41 @@ For production, deploy to Vercel or a cloud provider.
 ## Litter Box Usage Visualization
 ![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/litterbox_usage_data_visualization.png)
 
+### Natural-language database queries with Postgres MCP and Claude
 
+The backend includes a **Postgres MCP (Model Context Protocol) client** and a **Claude AI integration** that let you query the litterbox PostgreSQL database in plain English from a CLI.
 
+- **MCP server**: Uses the community Postgres MCP server (`@henkey/postgres-mcp-server`) and talks to it over stdio via `npx`. The client is implemented in `backend/src/db_ask/mcp_client.py` as `PostgresMCPClient`.
+- **Claude integration**: `backend/src/db_ask/claude.py`, `chat.py`, and `tools.py` wrap the Anthropic Messages API and expose the Postgres MCP tools to Claude as tools it can call while answering questions.
+- **CLI entry point**: `backend/src/db_ask/cli.py` provides a command-line interface that:
+  - Starts the Postgres MCP server and fetches schema (via `pg_manage_schema` with `operation: "get_info"`).
+  - Boots a Claude chat loop with that schema in the system prompt.
+  - Lets you ask free-form questions like “What are the tables in the database?” or “How many litterbox events were recorded yesterday?”, and Claude decides when to call the MCP tools and returns a natural-language answer.
+
+#### Configuration
+
+Create a `.env` file under `backend/` with:
+
+```env
+ANTHROPIC_API_KEY=your_anthropic_key_here
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
+POSTGRES_CONNECTION_STRING=postgresql://example_user:example_password@localhost:5435/example_db
+```
+
+`POSTGRES_CONNECTION_STRING` is optional; if omitted, the backend defaults to the same connection string used by the Docker Compose setup.
+
+#### Running the CLI
+
+From the `backend` directory:
+
+```bash
+poetry run db-ask
+```
+
+You’ll see it connect to the Postgres MCP server and fetch schema, then an interactive prompt:
+
+```text
+Ask DB >
+```
+
+Type a question about your data (for example, `What tables exist in this database?`) and press Enter. The tool will use the Postgres MCP tools to inspect schema and run safe, read-only queries, and Claude will summarize the results in concise, human-friendly text.
