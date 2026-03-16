@@ -5,5 +5,5 @@ __pycache__/
 docker-data/
 node_modules/
 
-.cursor/mcp.json
+.cursor/*
 .env
