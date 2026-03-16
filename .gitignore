@@ -4,3 +4,6 @@ __pycache__/
 .docker-data/
 docker-data/
 node_modules/
+
+.cursor/*
+.env

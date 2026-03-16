@@ -1,0 +1,84 @@
+<mxfile host="65bd71144e">
+    <diagram id="mcp-claude-integration" name="MCP-Claude Integration">
+        <mxGraphModel dx="984" dy="448" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="user" value="User db-ask CLI backend/src/db_ask/cli.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=0;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="120" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" style="edgeStyle=none;html=1;entryX=0;entryY=0;entryDx=0;entryDy=0;startArrow=classic;startFill=1;endArrow=classic;endFill=1;entryPerimeter=0;strokeColor=#D8B9E7;" edge="1" parent="1" target="tools">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="470" y="190" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="10" value="get_tools_for_claude;&lt;br&gt;execute_tool_requests" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="9">
+                    <mxGeometry x="0.3122" y="1" relative="1" as="geometry">
+                        <mxPoint x="-73" y="8" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="dbchat" value="DbChat backend/src/db_ask/chat.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="120" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="claude" value="Claude wrapper backend/src/db_ask/claude.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="60" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="tools" value="Tools adapter backend/src/db_ask/tools.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="210" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_client" value="PostgresMCPClient backend/src/db_ask/mcp_client.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="90" width="210" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="anthropic" value="Claude API Anthropic cloud" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="10" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="postgres" value="Postgres DB Docker (compose)" style="swimlane;childLayout=stackLayout;horizontal=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="250" width="210" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_server" value="@henkey/postgres-mcp-server spawned via npx" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="postgres" vertex="1">
+                    <mxGeometry width="210" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="db" value="PostgreSQL instance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="postgres" vertex="1">
+                    <mxGeometry y="60" width="210" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="messages &lt;br&gt;+ tools" style="endArrow=block;html=1;strokeColor=#d6b656;startArrow=classic;startFill=1;" parent="1" source="dbchat" target="claude" edge="1">
+                    <mxGeometry x="0.0588" y="27" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e5" value="" style="endArrow=block;html=1;strokeColor=#82b366;startArrow=classic;startFill=1;" parent="1" source="tools" target="mcp_client" edge="1">
+                    <mxGeometry x="-0.0056" y="16" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" value="spawn via npx stdio transport" style="endArrow=block;html=1;strokeColor=#82b366;dashed=1;" parent="1" source="mcp_client" target="mcp_server" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="SQL queries" style="endArrow=block;html=1;strokeColor=#666666;" parent="1" source="mcp_server" target="db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" value="HTTPS" style="endArrow=block;html=1;strokeColor=#d6b656;" parent="1" source="claude" target="anthropic" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;endFill=1;startArrow=classic;startFill=1;" parent="1" source="dbchat" target="user" edge="1">
+                    <mxGeometry x="0.1079" y="52" relative="1" as="geometry">
+                        <Array as="points"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="7" value="NL Q&amp;amp; A" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="e9">
+                    <mxGeometry x="-0.4514" y="1" relative="1" as="geometry">
+                        <mxPoint x="-14" y="14" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="2" value="&lt;span style=&quot;font-size: 11px; background-color: rgb(255, 255, 255);&quot;&gt;list_tools/ &lt;br&gt;call_tool&amp;nbsp;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="690" y="150" width="70" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+                    <mxGeometry x="130" y="60" width="30" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
+
