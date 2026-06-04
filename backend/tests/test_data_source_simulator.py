@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -9,6 +11,7 @@ from litterlog.data_source.litterbox_edge_device_simulator import (
     LitterboxSimulator,
     EDGE_DEVICE_ID,
     EMPTY_LITTERBOX_WEIGHT,
+    SIMULATED_DATA_DIR,
 )
 
 
@@ -160,7 +163,7 @@ class TestLitterboxSimulator:
         simulator.save_data_to_file(test_data, filename)
 
         mock_file.assert_called_once_with(
-            "simulated_litterbox_data/test_file.json", "w"
+            os.path.join(SIMULATED_DATA_DIR, filename), "w"
         )
         mock_json_dump.assert_called_once_with(
             test_data,
@@ -181,10 +184,10 @@ class TestLitterboxSimulator:
 
         simulator.save_data_to_file(test_data)
 
-        expected_filename = (
-            "simulated_litterbox_data/litterbox_data_20240115_120000.json"
+        expected_filepath = os.path.join(
+            SIMULATED_DATA_DIR, "litterbox_data_20240115_120000.json"
         )
-        mock_file.assert_called_once_with(expected_filename, "w")
+        mock_file.assert_called_once_with(expected_filepath, "w")
         mock_json_dump.assert_called_once_with(
             test_data,
             mock_file.return_value.__enter__.return_value,
