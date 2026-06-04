@@ -17,9 +17,9 @@ from werkzeug.exceptions import HTTPException
 
 from prometheus_flask_exporter import PrometheusMetrics
 
-from config.logging import get_logger
-from database_support.postgresql_gateway import PostgreSQLGateway
-from models.models import (
+from litterlog.config.logging import get_logger
+from litterlog.database_support.postgresql_gateway import PostgreSQLGateway
+from litterlog.models.models import (
     LitterboxUsageData,
     UserInfo,
     CatInfo,

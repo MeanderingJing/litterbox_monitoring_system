@@ -21,14 +21,14 @@ import logging
 import os
 import pika
 
-from models.models import LitterboxUsageData
-from rabbitmq_support.rabbitmq_gateway import (
+from litterlog.models.models import LitterboxUsageData
+from litterlog.rabbitmq_support.rabbitmq_gateway import (
     CONNECTION_PARAMS,
     EXCHANGE_NAME,
     EXCHANGE_TYPE,
     get_rabbitmq_connection,
 )
-from config.logging import get_logger
+from litterlog.config.logging import get_logger
 
 logger = get_logger(__name__)
 

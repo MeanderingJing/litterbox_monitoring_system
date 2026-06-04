@@ -8,15 +8,15 @@ from typing import Dict
 from datetime import datetime
 import uuid
 
-from config.logging import get_logger
-from rabbitmq_support.rabbitmq_gateway import (
+from litterlog.config.logging import get_logger
+from litterlog.rabbitmq_support.rabbitmq_gateway import (
     CONNECTION_PARAMS,
     EXCHANGE_NAME,
     EXCHANGE_TYPE,
     ROUTING_KEY,
     QUEUE_NAME,
 )
-from database_support.postgresql_gateway import PostgreSQLGateway
+from litterlog.database_support.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
 

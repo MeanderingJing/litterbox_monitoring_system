@@ -2,7 +2,7 @@ import os
 import pika
 from contextlib import contextmanager
 
-from config.logging import get_logger
+from litterlog.config.logging import get_logger
 
 logger = get_logger(__name__)
 

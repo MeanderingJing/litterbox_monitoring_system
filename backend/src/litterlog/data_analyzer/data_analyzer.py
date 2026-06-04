@@ -5,8 +5,8 @@ It includes functions to analyze litterbox usage data.
 
 from typing import Any, Dict
 
-from config.logging import get_logger
-from database_support.postgresql_gateway import PostgreSQLGateway
+from litterlog.config.logging import get_logger
+from litterlog.database_support.postgresql_gateway import PostgreSQLGateway
 
 logger = get_logger(__name__)
 DATABASE_URL = (

@@ -3,16 +3,7 @@ name = "litterbox-monitoring-system-backend"
 version = "0.1.0"
 description = "A Python package retrieving litterbox usage data and storing in a database."
 authors = ["Emma Li"]
-packages = [
-  { include = "config", from = "src" },
-  { include = "database_support", from = "src" },
-  { include = "models", from = "src" },
-  { include = "data_source", from = "src" },
-  { include = "data_persister", from = "src" },
-  { include = "data_analyzer", from = "src" },
-  { include = "rabbitmq_support", from = "src" },
-  { include = "db_ask", from = "src" },
-]
+packages = [{ include = "litterlog", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -52,7 +43,7 @@ types-requests = "^2.32.4.20250611"
 pytest-mock = "^3.14.1"
 
 [tool.poetry.scripts]
-db-ask = "db_ask.cli:main"
+db-ask = "litterlog.db_ask.cli:main"
 
 [build-system]
 requires = ["poetry-core"]

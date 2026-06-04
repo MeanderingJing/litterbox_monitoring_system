@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from config.logging import get_logger
-from models.models import Base, LitterboxUsageData
+from litterlog.config.logging import get_logger
+from litterlog.models.models import Base, LitterboxUsageData
 
 from .gateway import DatabaseGateway
 
