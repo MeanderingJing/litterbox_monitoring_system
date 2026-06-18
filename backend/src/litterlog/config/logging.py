@@ -15,9 +15,38 @@ def _should_log_to_file() -> bool:
     return value in {"1", "true", "yes", "on"}
 
 
+def _find_project_root() -> str:
+    """Find the repository root by walking up for known marker files.
+
+    Falls back to the parent of the litterlog package directory when no
+    markers are found (e.g. in Docker where the package lives at /app/litterlog).
+    """
+    markers = (
+        "docker-compose.yml",
+        os.path.join("backend", "pyproject.toml"),
+    )
+
+    path = os.path.abspath(os.path.dirname(__file__))
+    while True:
+        for marker in markers:
+            if os.path.isfile(os.path.join(path, marker)):
+                return path
+        parent = os.path.dirname(path)
+        if parent == path:
+            break
+        path = parent
+
+    package_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return os.path.dirname(package_dir)
+
+
 def _get_log_file_path() -> str:
     """Build the log file path from environment variables (if enabled)."""
-    log_dir = os.getenv("LOG_DIR", "logs")
+    project_root = _find_project_root()
+    default_log_dir = os.path.join(project_root, "logs")
+    log_dir = os.getenv("LOG_DIR", default_log_dir)
+    if not os.path.isabs(log_dir):
+        log_dir = os.path.join(project_root, log_dir)
     log_filename = os.getenv(
         "LOG_FILE_NAME",
         f'litterbox_sync_{datetime.now().strftime("%Y%m%d")}.log',
