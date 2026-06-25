@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 # Import your models (adjust the import path as needed)
-from models.models import (
+from litterlog.models.models import (
     Base,
     UserInfo,
     CatInfo,

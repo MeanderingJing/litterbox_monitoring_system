@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from anthropic.types import Message, ToolResultBlockParam
 
-from db_ask.mcp_client import PostgresMCPClient, _text_from_tool_result
+from litterlog.db_ask.mcp_client import PostgresMCPClient, _text_from_tool_result
 
 
 def _tool_result_content(result: Any) -> str:

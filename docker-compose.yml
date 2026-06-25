@@ -43,7 +43,7 @@ services:
   data_persister:
     build:
       context: ./backend
-      dockerfile: src/data_persister/Dockerfile
+      dockerfile: src/litterlog/data_persister/Dockerfile
     container_name: litterbox_data_persister
     environment:
       RABBITMQ_HOST: rabbitmq
@@ -119,7 +119,7 @@ networks:
   # litterbox_simulator:
   #   build:
   #     context: ./backend
-  #     dockerfile: src/data_source/Dockerfile
+  #     dockerfile: src/litterlog/data_source/Dockerfile
   #   container_name: litterbox_data_source_simulator
   #   depends_on:
   #     rabbitmq:
@@ -133,7 +133,7 @@ networks:
 
   #   volumes:
   #     - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
-  #   command: ["python", "data_source/litterbox_edge_device_simulator.py"]
+  #   command: ["python", "-m", "litterlog.data_source.litterbox_edge_device_simulator"]
   #   restart: unless-stopped
   #   networks:
   #     - litterbox-network

@@ -3,7 +3,7 @@ CLI for natural-language database queries via Postgres MCP and Claude.
 
 Usage:
   poetry run db-ask
-  poetry run python -m db_ask.cli
+  poetry run python -m litterlog.db_ask.cli
 
 Requires .env or environment:
   ANTHROPIC_API_KEY  - Anthropic API key
@@ -17,9 +17,9 @@ import sys
 
 from dotenv import load_dotenv
 
-from db_ask.chat import DbChat
-from db_ask.claude import Claude
-from db_ask.mcp_client import PostgresMCPClient, get_connection_string
+from litterlog.db_ask.chat import DbChat
+from litterlog.db_ask.claude import Claude
+from litterlog.db_ask.mcp_client import PostgresMCPClient, get_connection_string
 
 load_dotenv()
 

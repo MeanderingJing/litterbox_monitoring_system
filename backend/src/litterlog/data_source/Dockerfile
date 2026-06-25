@@ -1,8 +1,14 @@
+# Export locked dependencies from Poetry, then install with pip (no Poetry in final image).
+FROM python:3.12-slim AS deps
+
+RUN pip install --no-cache-dir poetry==1.8.3
+
+WORKDIR /build
+COPY pyproject.toml poetry.lock ./
+RUN poetry export -f requirements.txt --without-hashes --only main -o requirements.txt
+
 FROM python:3.11-slim
 
-# Install system dependencies
-# Install gcc and libpq-dev for PostgreSQL support to assist building psycopg2 from source
-# Recommended for production use
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
@@ -14,15 +20,11 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
+COPY --from=deps /build/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
-COPY src/config/ ./config/
-COPY src/models/ ./models/
-COPY src/rabbitmq_support/ ./rabbitmq_support/
-COPY src/data_source/ ./data_source/
+# Copy the application package
+COPY src/litterlog/ ./litterlog/
 
 # Consider adding Healthcheck in the future
 
@@ -35,5 +37,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Command to run the litterbox edge device simulator
-CMD ["python", "data_source/litterbox_edge_device_simulator.py"]
-
+CMD ["python", "-m", "litterlog.data_source.litterbox_edge_device_simulator"]

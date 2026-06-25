@@ -2,9 +2,9 @@
 
 from anthropic.types import MessageParam
 
-from db_ask.claude import Claude
-from db_ask.mcp_client import PostgresMCPClient
-from db_ask.tools import execute_tool_requests, get_tools_for_claude
+from litterlog.db_ask.claude import Claude
+from litterlog.db_ask.mcp_client import PostgresMCPClient
+from litterlog.db_ask.tools import execute_tool_requests, get_tools_for_claude
 
 
 SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant that answers questions about a PostgreSQL database for a litterbox monitoring system.
