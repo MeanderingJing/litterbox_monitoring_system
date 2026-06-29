@@ -2,7 +2,6 @@ version: '3.8'
 services:
   db:
     image: postgres:16
-    container_name: litterbox_postgres_db
     environment:
       POSTGRES_USER: example_user
       POSTGRES_PASSWORD: example_password
@@ -22,7 +21,6 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.12-management
-    container_name: litterbox-rabbitmq-server
     ports:
       - "15672:15672"  # RabbitMQ Management UI
       - "5672:5672"    # RabbitMQ AMQP protocol
@@ -44,7 +42,6 @@ services:
     build:
       context: ./backend
       dockerfile: src/litterlog/data_persister/Dockerfile
-    container_name: litterbox_data_persister
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -84,7 +81,6 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: litterbox_prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./.docker-data/.prometheus-data:/prometheus
@@ -99,7 +95,6 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: litterbox_grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -116,27 +111,26 @@ networks:
   litterbox-network:
     driver: bridge
 
-  # litterbox_simulator:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: src/litterlog/data_source/Dockerfile
-  #   container_name: litterbox_data_source_simulator
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
+  litterbox_simulator:
+    build:
+      context: ./backend
+      dockerfile: src/litterlog/data_source/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
-  #   environment:
-  #     RABBITMQ_HOST: rabbitmq
-  #     RABBITMQ_PORT: 5672
-  #     RABBITMQ_USER: user
-  #     RABBITMQ_PASSWORD: password
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASSWORD: password
 
-  #   volumes:
-  #     - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
-  #   command: ["python", "-m", "litterlog.data_source.litterbox_edge_device_simulator"]
-  #   restart: unless-stopped
-  #   networks:
-  #     - litterbox-network
+    volumes:
+      - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
+    command: ["python", "-m", "litterlog.data_source.litterbox_edge_device_simulator"]
+    restart: unless-stopped
+    networks:
+      - litterbox-network
 
 
 
