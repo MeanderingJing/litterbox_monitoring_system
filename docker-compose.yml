@@ -75,7 +75,7 @@ services:
       - |
         echo "Waiting for simulator to produce initial data..."
         sleep 10
-        python data_persister/data_persister.py
+        python -m litterlog.data_persister.data_persister
     networks:
       - litterbox-network
 
