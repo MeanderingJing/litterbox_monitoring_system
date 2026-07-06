@@ -7,7 +7,7 @@ WORKDIR /build
 COPY pyproject.toml poetry.lock ./
 RUN poetry export -f requirements.txt --without-hashes --only main -o requirements.txt
 
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Install gcc and libpq-dev for PostgreSQL support when building psycopg2 from source
 RUN apt-get update && apt-get install -y \
