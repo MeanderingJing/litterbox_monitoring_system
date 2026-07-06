@@ -37,7 +37,7 @@ services:
       - ./.docker-data/.rabbitmq-data:/var/lib/rabbitmq
     networks:
       - litterbox-network
-  # TO CHECK
+
   data_persister:
     build:
       context: ./backend
@@ -57,8 +57,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      # litterbox_simulator:
-      #   condition: service_started
+      litterbox_simulator:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import pika; import os; pika.BlockingConnection(pika.URLParameters(os.getenv('RABBITMQ_URL'))).close()"]
@@ -76,6 +76,27 @@ services:
         echo "Waiting for simulator to produce initial data..."
         sleep 10
         python data_persister/data_persister.py
+    networks:
+      - litterbox-network
+
+  litterbox_simulator:
+    build:
+      context: ./backend
+      dockerfile: src/litterlog/data_source/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASSWORD: password
+
+    volumes:
+      - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
+    command: ["python", "-m", "litterlog.data_source.litterbox_edge_device_simulator"]
+    restart: unless-stopped
     networks:
       - litterbox-network
 
@@ -111,26 +132,7 @@ networks:
   litterbox-network:
     driver: bridge
 
-  litterbox_simulator:
-    build:
-      context: ./backend
-      dockerfile: src/litterlog/data_source/Dockerfile
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: user
-      RABBITMQ_PASSWORD: password
-
-    volumes:
-      - ./.docker-data/.simulated_litterbox_data:/app/simulated_litterbox_data
-    command: ["python", "-m", "litterlog.data_source.litterbox_edge_device_simulator"]
-    restart: unless-stopped
-    networks:
-      - litterbox-network
+  
 
 
 
