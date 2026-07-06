@@ -1,22 +1,34 @@
-# Overview of the Litterbox Monitoring System (LitterLog)
-The litterbox monitoring system aims to address the challenge of tracking feline health and behavior patterns that are often invisible to pet owners. It targets health-conscious cat owners who need reliable, continuous monitoring to detect early signs of urinary tract infections (UTI) that first manifest through changes in litterbox usage patterns, as well as to track treatment progress and recovery by monitoring improvements in litterbox behavior during active UTI treatment.
+# Introduction of the Litterbox Monitoring System (LitterLog)
+The litterbox monitoring system aims to address the challenge of tracking feline health and behavior patterns that are often invisible to pet owners. It targets health-conscious cat owners who need reliable, continuous monitoring to detect early signs of urinary tract infections (UTI) that first manifest through changes in litterbox usage patterns.
 
 The end-to-end solution combines edge computing (implemented as a litterbox simulator here), ETL processing, data analysis, and user-friendly web interface, delivering predictive health insights that can detect subtle deviations before they become apparent to cat owners.
 
 This is an on-going project that is constantly being improved.
 
+# Overview of the Litterbox Monitoring System (LitterLog)
+Litterlog is a cat litterbox monitoring system with two parts:
+- `backend/` -- Python 3.12 / Flask REST API (port 8000) plus an IoT data pipeline (simulator → RabbitMQ → persister → PostgreSQL). Managed by Poetry (in-project venv at backend/.venv).
+- `frontend/` -- Next.js 15 dashboard (port 3000). Standard commands are in frontend/package.json (npm run dev, build, lint).
+
 # System Diagram
 ![System Diagram](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/docs/images/LitterLog-high-level-diagram.png)
 
-# Spin up the backend using Docker compose
-`sudo docker compose up`
-## What does the docker compose command do?
+# Instructions on Setting Up the Dev Environment 
+## Spin up the backend and infrastructure services using Docker compose
+`sudo docker compose up` 
+Note: `sudo` is not needed if you run this command on Windows. 
+### What does the docker compose command do? 
 - Spin up the PostgreSQL database
 - Spin up the RabbitMQ service
+- Spin up the Prometheus service
+- Spin up the Grafana service
 - Run the litterbox simulator in docker container, which produces litterbox usage data to RabbitMQ
 - Run the data persister in docker container, which consumes messages from RabbitMQ and send it to the database
 
-# Run backend flask app locally for development
+Note:
+- The simulator publishes usage records with a hardcoded edge-device id 12345678-1234-5678-9012-123456789abc. Because litterbox_usage_data.litterbox_edge_device_id is a foreign key, you must first register an edge device with that exact id via the API (POST /edge_devices after creating a user → cat → litterbox) or the persister's inserts fail with FK violations.
+
+## Run backend flask app locally for development
 From the `backend` directory, install dependencies with Poetry and start the API:
 
 ```bash
@@ -27,21 +39,23 @@ poetry run flask --app litterlog.api.app run --port 8000
 
 Dependencies are defined in `pyproject.toml` and locked in `poetry.lock`. Docker images export those locked dependencies at build time (see worker Dockerfiles under `backend/src/litterlog/`).
 
-Using `flask run` locally instead of Docker for this allows fast iteration, as I don't need to rebuild the container every time when there're code changes.
+Using `flask run` locally instead of Docker allows fast iteration, as I don't need to rebuild the container every time when there're code changes.
 
-For production, use gunicorn and nginx (my own production server), a third-party platform-as-a-service (Heroku, Fly.io, etc), or a cloud provider.
+For production, use gunicorn and nginx, a third-party platform-as-a-service (Heroku, Fly.io, etc), or a cloud provider.
 
-# Run frontend locally for development
+
+## Run frontend locally for development
+`cd frontend`
 `npm install` 
 `npm run dev`
 
 For production, deploy to Vercel or a cloud provider.
-## Litterlog Sign in Page
+### Litterlog Sign in Page
 ![Sign in Page](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/docs/images/Litterlog_sign_in.png)
-## Litter Box Usage Visualization
+### Litter Box Usage Visualization
 ![Litter Box Usage Visualization](https://github.com/MeanderingJing/litterbox_monitoring_system/blob/main/docs/images/litterbox_usage_data_visualization.png)
 
-### Natural-language database queries with Postgres MCP and Claude
+## Natural-language database queries with Postgres MCP and Claude
 
 The backend includes a **Postgres MCP (Model Context Protocol) client** and a **Claude AI integration** that let you query the litterbox PostgreSQL database in plain English from a CLI.
 
